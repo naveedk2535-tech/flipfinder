@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 def research_prices(search_query, product_info):
-    """Research sold prices across multiple platforms."""
+    """Research sold prices across US platforms."""
     try:
         brand = product_info.get('brand', '')
         product_type = product_info.get('product_type', '')
@@ -17,18 +17,20 @@ def research_prices(search_query, product_info):
 Brand: {brand} | Type: {product_type} | Era: {era} | Style: {style}
 
 Perform these searches in order:
-1. "{search_query} sold eBay 2024 2025"
-2. "{search_query} sold Depop price"
-3. "{search_query} Vinted sold price UK"
+1. "{search_query} sold eBay 2024 2025 USA"
+2. "{search_query} sold Poshmark price"
+3. "{search_query} Mercari sold price"
 4. "{search_query} StockX last sale price"
-5. "{search_query} auction result Sotheby Christie Heritage"
-6. "{search_query} bidding forum sold price"
+5. "{search_query} GOAT sold price"
+6. "{search_query} Depop sold price"
+7. "{search_query} auction result Sotheby Christie Heritage Auctions"
+8. "{search_query} bidding forum sold price"
 
-Find ACTUAL completed sales, not just listings. Extract real transaction prices.
+Find ACTUAL completed sales, not just listings. Extract real transaction prices in USD.
 
 Return ONLY valid JSON (no markdown, no extra text):
 {{
-  "currency": "GBP",
+  "currency": "USD",
   "min_sold": 0,
   "max_sold": 0,
   "avg_sold": 0,
@@ -54,7 +56,7 @@ Return ONLY valid JSON (no markdown, no extra text):
         logger.error(f"Pricing agent error: {e}")
 
     return {
-        "currency": "GBP",
+        "currency": "USD",
         "min_sold": 0,
         "max_sold": 0,
         "avg_sold": 0,

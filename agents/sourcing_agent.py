@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 def find_sourcing_deals(search_query, avg_sold_price, product_info=None):
-    """Find cheapest sourcing deals and similar items."""
+    """Find cheapest sourcing deals on US platforms."""
     try:
         product_info = product_info or {}
         colors = ', '.join(product_info.get('colors', []))
@@ -14,19 +14,20 @@ def find_sourcing_deals(search_query, avg_sold_price, product_info=None):
         product_type = product_info.get('product_type', '')
         target_buy = round(avg_sold_price * 0.45, 2) if avg_sold_price else 0
 
-        prompt = f"""Find the cheapest places to BUY this item right now: "{search_query}"
+        prompt = f"""Find the cheapest places to BUY this item right now in the USA: "{search_query}"
 Colors: {colors} | Style: {style} | Type: {product_type}
-Target buy price: under £{target_buy} (45% of avg sell price £{avg_sold_price})
+Target buy price: under ${target_buy} (45% of avg sell price ${avg_sold_price})
 
 Search these sources:
-1. "{search_query} cheap buy now eBay"
-2. "{search_query} Vinted buy low price UK"
-3. "{search_query} Facebook Marketplace cheap UK"
-4. "{search_query} charity shop online ASOS Marketplace"
+1. "{search_query} cheap buy now eBay USA"
+2. "{search_query} Poshmark low price buy now"
+3. "{search_query} Mercari cheap USA"
+4. "{search_query} Facebook Marketplace cheap USA"
 5. "{search_query} Depop low price buy now"
-6. "{colors} {product_type} similar style cheap"
-7. "{style} {product_type} auction lot cheap"
-8. "similar to {search_query} alternative cheap"
+6. "{search_query} OfferUp cheap"
+7. "{colors} {product_type} similar style cheap USA"
+8. "{style} {product_type} auction lot cheap USA"
+9. "similar to {search_query} alternative cheap"
 
 Return ONLY valid JSON (no markdown, no extra text):
 {{

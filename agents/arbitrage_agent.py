@@ -6,10 +6,10 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_arbitrage(pricing_data, sourcing_data):
-    """Calculate arbitrage profit with platform breakdown."""
+    """Calculate arbitrage profit with US platform breakdown."""
     try:
         prompt = f"""You are an expert resale arbitrage calculator. Analyse this market data
-and calculate the complete arbitrage opportunity.
+and calculate the complete arbitrage opportunity. All prices are in USD.
 
 PRICING DATA (what it sells for):
 {json.dumps(pricing_data, indent=2)}
@@ -21,7 +21,7 @@ Calculate precisely:
 - Best buy price = cheapest from sourcing_data
 - Best sell price = recommended_sell_price from pricing_data
 - Gross profit = sell - buy
-- Platform fees: eBay 13.5%, Depop 10%, Vinted 5%, StockX 9.5%
+- Platform fees: eBay 13.5%, Depop 10%, Poshmark 20%, StockX 9.5%
 - Net profit after fees for EACH platform
 - ROI = (net_profit / buy_price) * 100
 - Risk: low (price variance <20%), medium (20-50%), high (>50%)
@@ -43,10 +43,10 @@ Return ONLY valid JSON (no markdown, no extra text):
   "recommendation": "specific actionable advice",
   "opportunity_score": 75,
   "platform_breakdown": [
-    {{"platform": "eBay",   "fee_pct": 13.5, "fee_amount": 0, "net_profit": 0, "net_roi": 0}},
-    {{"platform": "Depop",  "fee_pct": 10,   "fee_amount": 0, "net_profit": 0, "net_roi": 0}},
-    {{"platform": "Vinted", "fee_pct": 5,    "fee_amount": 0, "net_profit": 0, "net_roi": 0}},
-    {{"platform": "StockX", "fee_pct": 9.5,  "fee_amount": 0, "net_profit": 0, "net_roi": 0}}
+    {{"platform": "eBay",     "fee_pct": 13.5, "fee_amount": 0, "net_profit": 0, "net_roi": 0}},
+    {{"platform": "Depop",    "fee_pct": 10,   "fee_amount": 0, "net_profit": 0, "net_roi": 0}},
+    {{"platform": "Poshmark", "fee_pct": 20,   "fee_amount": 0, "net_profit": 0, "net_roi": 0}},
+    {{"platform": "StockX",   "fee_pct": 9.5,  "fee_amount": 0, "net_profit": 0, "net_roi": 0}}
   ]
 }}"""
 
@@ -72,9 +72,9 @@ Return ONLY valid JSON (no markdown, no extra text):
         "recommendation": "Insufficient data to calculate arbitrage.",
         "opportunity_score": 0,
         "platform_breakdown": [
-            {"platform": "eBay",   "fee_pct": 13.5, "fee_amount": 0, "net_profit": 0, "net_roi": 0},
-            {"platform": "Depop",  "fee_pct": 10,   "fee_amount": 0, "net_profit": 0, "net_roi": 0},
-            {"platform": "Vinted", "fee_pct": 5,    "fee_amount": 0, "net_profit": 0, "net_roi": 0},
-            {"platform": "StockX", "fee_pct": 9.5,  "fee_amount": 0, "net_profit": 0, "net_roi": 0}
+            {"platform": "eBay",     "fee_pct": 13.5, "fee_amount": 0, "net_profit": 0, "net_roi": 0},
+            {"platform": "Depop",    "fee_pct": 10,   "fee_amount": 0, "net_profit": 0, "net_roi": 0},
+            {"platform": "Poshmark", "fee_pct": 20,   "fee_amount": 0, "net_profit": 0, "net_roi": 0},
+            {"platform": "StockX",   "fee_pct": 9.5,  "fee_amount": 0, "net_profit": 0, "net_roi": 0}
         ]
     }

@@ -61,16 +61,16 @@
       <div class="flex-1 grid grid-cols-2 gap-4">
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Buy At</div>
-          <div class="font-heading font-bold text-xl text-[#f1f5f9]">£{{ "%.2f"|format(arb.get("buy_price",0)) }}</div>
+          <div class="font-heading font-bold text-xl text-[#f1f5f9]">${{ "%.2f"|format(arb.get("buy_price",0)) }}</div>
         </div>
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Sell At</div>
-          <div class="font-heading font-bold text-xl text-[#f1f5f9]">£{{ "%.2f"|format(arb.get("sell_price",0)) }}</div>
+          <div class="font-heading font-bold text-xl text-[#f1f5f9]">${{ "%.2f"|format(arb.get("sell_price",0)) }}</div>
         </div>
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Net Profit</div>
           <div class="font-heading font-bold text-xl {% if arb.get("net_profit",0) > 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
-            £{{ "%.2f"|format(arb.get("net_profit",0)) }}
+            ${{ "%.2f"|format(arb.get("net_profit",0)) }}
           </div>
         </div>
         <div class="bg-[#111118] rounded-xl p-4 text-center">
@@ -111,7 +111,7 @@
         <div class="font-heading font-bold text-base mb-1">{{ p.platform }}</div>
         <div class="text-xs text-[#52526a] mb-2">{{ p.fee_pct }}% fee</div>
         <div class="font-bold {% if p.net_profit > 0 %}text-emerald-400{% else %}text-red-400{% endif %} text-lg">
-          £{{ "%.2f"|format(p.net_profit) }}
+          ${{ "%.2f"|format(p.net_profit) }}
         </div>
         <div class="text-xs text-[#52526a]">{{ "%.0f"|format(p.net_roi) }}% ROI</div>
       </div>
@@ -184,20 +184,20 @@
     <div class="grid grid-cols-3 gap-4 mb-6">
       <div class="text-center">
         <div class="text-[#52526a] text-xs mb-1">Min Sold</div>
-        <div class="font-bold text-xl text-[#f1f5f9]">£{{ "%.0f"|format(min_p) }}</div>
+        <div class="font-bold text-xl text-[#f1f5f9]">${{ "%.0f"|format(min_p) }}</div>
       </div>
       <div class="text-center">
         <div class="text-[#52526a] text-xs mb-1">Avg Sold</div>
-        <div class="font-bold text-xl text-indigo-400">£{{ "%.0f"|format(avg_p) }}</div>
+        <div class="font-bold text-xl text-indigo-400">${{ "%.0f"|format(avg_p) }}</div>
       </div>
       <div class="text-center">
         <div class="text-[#52526a] text-xs mb-1">Max Sold</div>
-        <div class="font-bold text-xl text-[#f1f5f9]">£{{ "%.0f"|format(max_p) }}</div>
+        <div class="font-bold text-xl text-[#f1f5f9]">${{ "%.0f"|format(max_p) }}</div>
       </div>
     </div>
     <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 text-center mb-6">
       <div class="text-[#52526a] text-xs mb-1">Recommended Sell Price</div>
-      <div class="font-heading font-extrabold text-3xl text-indigo-400">£{{ "%.2f"|format(pricing.get("recommended_sell_price",0)) }}</div>
+      <div class="font-heading font-extrabold text-3xl text-indigo-400">${{ "%.2f"|format(pricing.get("recommended_sell_price",0)) }}</div>
     </div>
     {% if pricing.get("market_notes") %}
     <p class="text-[#f1f5f9]/60 text-sm mb-4">{{ pricing.market_notes }}</p>
@@ -212,7 +212,7 @@
           <div class="text-[#52526a] text-xs">{{ s.get("platform","") }} — {{ s.get("date","") }}</div>
         </div>
         <div class="flex items-center gap-3 flex-shrink-0 ml-3">
-          <span class="font-bold text-emerald-400">£{{ "%.0f"|format(s.get("price",0)) }}</span>
+          <span class="font-bold text-emerald-400">${{ "%.0f"|format(s.get("price",0)) }}</span>
           {% if s.get("url") %}<a href="{{ s.url }}" target="_blank" class="text-indigo-400 text-xs hover:underline">View</a>{% endif %}
         </div>
       </div>
@@ -228,7 +228,7 @@
           <div class="font-medium text-[#f1f5f9]">{{ a.get("house","") }}</div>
           <div class="text-[#52526a] text-xs">{{ a.get("lot_description","") }} — {{ a.get("date","") }}</div>
         </div>
-        <span class="font-bold text-amber-400">£{{ "%.0f"|format(a.get("price",0)) }}</span>
+        <span class="font-bold text-amber-400">${{ "%.0f"|format(a.get("price",0)) }}</span>
       </div>
       {% endfor %}
     </div>
@@ -247,7 +247,7 @@
           <div class="text-[#52526a] text-xs">{{ d.get("platform","") }} — {{ d.get("condition","") }}</div>
         </div>
         <div class="flex items-center gap-3 flex-shrink-0 ml-3">
-          <span class="font-bold text-emerald-400">£{{ "%.2f"|format(d.get("price",0)) }}</span>
+          <span class="font-bold text-emerald-400">${{ "%.2f"|format(d.get("price",0)) }}</span>
           {% if d.get("buy_link") or d.get("url") %}
           <a href="{{ d.get("buy_link") or d.get("url") }}" target="_blank"
             class="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-500 transition-colors">Buy Now</a>
@@ -266,7 +266,7 @@
         <div class="font-medium text-[#f1f5f9] mb-1">{{ item.get("item","") }}</div>
         <div class="text-[#52526a] text-xs mb-2">{{ item.get("why_similar","") }}</div>
         <div class="flex justify-between items-center">
-          <span class="text-indigo-400 font-bold">£{{ "%.2f"|format(item.get("price",0)) }}</span>
+          <span class="text-indigo-400 font-bold">${{ "%.2f"|format(item.get("price",0)) }}</span>
           <span class="text-[#52526a] text-xs">{{ item.get("platform","") }}</span>
         </div>
       </div>
@@ -282,7 +282,7 @@
         <div class="font-medium text-[#f1f5f9] mb-1">{{ item.get("item","") }}</div>
         <div class="text-[#52526a] text-xs mb-2">{{ item.get("why_similar","") }}</div>
         <div class="flex justify-between items-center">
-          <span class="text-indigo-400 font-bold">£{{ "%.2f"|format(item.get("price",0)) }}</span>
+          <span class="text-indigo-400 font-bold">${{ "%.2f"|format(item.get("price",0)) }}</span>
           <span class="text-[#52526a] text-xs">{{ item.get("platform","") }}</span>
         </div>
       </div>
