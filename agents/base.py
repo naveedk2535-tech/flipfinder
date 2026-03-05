@@ -55,7 +55,7 @@ def _search_tool_for(model: str):
 
 def _call_gemini(model: str, parts: list, use_search: bool) -> str:
     client = _get_gemini_client()
-    config_kwargs = {"max_output_tokens": 1500, "temperature": 0.2}
+    config_kwargs = {"max_output_tokens": 8192, "temperature": 0.2}
     if use_search:
         config_kwargs["tools"] = [_search_tool_for(model)]
 

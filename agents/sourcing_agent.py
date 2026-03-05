@@ -54,10 +54,13 @@ Return ONLY valid JSON (no markdown, no extra text):
 }}"""
 
         raw = run_with_search(prompt=prompt, use_search=True)
+        logger.info(f"Sourcing raw response (first 200): {raw[:200]}")
         start = raw.find('{')
         end = raw.rfind('}') + 1
         if start >= 0 and end > start:
             return json.loads(raw[start:end])
+        else:
+            logger.error(f"Sourcing: no JSON found. Raw: {raw[:500]}")
 
     except Exception as e:
         logger.error(f"Sourcing agent error: {e}")
