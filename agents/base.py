@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 
 _client = None
 
+# Model preference order — tries best first, falls back automatically
+MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"]
+
 
 def _get_client():
     global _client
@@ -20,34 +23,10 @@ def _get_client():
     return _client
 
 
-def run_with_search(prompt: str, image_base64: str = None,
-                    image_media_type: str = None, use_search: bool = True) -> str:
-    """
-    Call Gemini 1.5 Flash (free tier: 1500 req/day) with:
-    - Google Search grounding for live price/market research
-    - Native image understanding for product photos
-    """
+def _call_model(model: str, parts: list, use_search: bool) -> str:
+    """Attempt a single model call. Raises on failure."""
     client = _get_client()
 
-    # Build content parts
-    parts = []
-
-    # Image support — Gemini 1.5 Flash reads images natively
-    if image_base64:
-        try:
-            image_bytes = base64.b64decode(image_base64)
-            parts.append(
-                types.Part.from_bytes(
-                    data=image_bytes,
-                    mime_type=image_media_type or "image/jpeg"
-                )
-            )
-        except Exception as e:
-            logger.warning(f"Image decode error: {e}")
-
-    parts.append(types.Part.from_text(text=prompt))
-
-    # Google Search grounding for gemini-1.5-flash uses google_search_retrieval
     config_kwargs = {
         "max_output_tokens": 1500,
         "temperature": 0.2,
@@ -65,42 +44,81 @@ def run_with_search(prompt: str, image_base64: str = None,
             )
         ]
 
-    config = types.GenerateContentConfig(**config_kwargs)
+    response = client.models.generate_content(
+        model=model,
+        contents=parts,
+        config=types.GenerateContentConfig(**config_kwargs)
+    )
 
-    try:
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=parts,
-            config=config
-        )
-        text_parts = []
-        for candidate in response.candidates:
-            for part in candidate.content.parts:
-                if hasattr(part, 'text') and part.text:
-                    text_parts.append(part.text)
-        result = " ".join(text_parts).strip()
-        if not result:
-            result = response.text
-        return result
+    text_parts = [
+        part.text for candidate in response.candidates
+        for part in candidate.content.parts
+        if hasattr(part, 'text') and part.text
+    ]
+    return " ".join(text_parts).strip()
 
-    except Exception as e:
-        logger.error(f"Gemini API error: {e}")
-        # Retry without search if search caused the failure
-        if use_search:
-            logger.info("Retrying without search tools...")
-            config_no_search = types.GenerateContentConfig(
-                max_output_tokens=1500,
-                temperature=0.2
-            )
-            response = client.models.generate_content(
-                model="gemini-1.5-flash",
-                contents=parts,
-                config=config_no_search
-            )
-            text_parts = []
-            for candidate in response.candidates:
-                for part in candidate.content.parts:
-                    if hasattr(part, 'text') and part.text:
-                        text_parts.append(part.text)
-            return " ".join(text_parts).strip()
-        raise
+
+def run_with_search(prompt: str, image_base64: str = None,
+                    image_media_type: str = None, use_search: bool = True) -> str:
+    """
+    Call Gemini with Google Search grounding and optional image support.
+    Tries models in order: gemini-2.5-flash → gemini-2.5-flash-lite → gemini-1.5-flash
+    Automatically falls back if a model returns 429 or quota error.
+    Free tier: 1500 req/day on 1.5-flash minimum.
+    """
+    parts = []
+
+    if image_base64:
+        try:
+            image_bytes = base64.b64decode(image_base64)
+            parts.append(types.Part.from_bytes(
+                data=image_bytes,
+                mime_type=image_media_type or "image/jpeg"
+            ))
+        except Exception as e:
+            logger.warning(f"Image decode error: {e}")
+
+    parts.append(types.Part.from_text(text=prompt))
+
+    # Try each model in preference order
+    last_error = None
+    for model in MODELS:
+        try:
+            result = _call_model(model, parts, use_search)
+            if result:
+                logger.info(f"Success with model: {model}")
+                return result
+        except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                logger.warning(f"{model} quota exceeded, trying next model...")
+                last_error = e
+                continue
+            # Non-quota error — try without search then give up
+            if use_search:
+                logger.warning(f"{model} error with search, retrying without: {e}")
+                try:
+                    client = _get_client()
+                    response = client.models.generate_content(
+                        model=model,
+                        contents=parts,
+                        config=types.GenerateContentConfig(
+                            max_output_tokens=1500,
+                            temperature=0.2
+                        )
+                    )
+                    text_parts = [
+                        part.text for candidate in response.candidates
+                        for part in candidate.content.parts
+                        if hasattr(part, 'text') and part.text
+                    ]
+                    result = " ".join(text_parts).strip()
+                    if result:
+                        return result
+                except Exception as e2:
+                    last_error = e2
+                    continue
+            last_error = e
+            continue
+
+    raise ValueError(f"All Gemini models failed. Last error: {last_error}")
