@@ -8,7 +8,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-to-a-long-random-string-minimum-32-chars')
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///flipfinder.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
     GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
     STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
     STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')

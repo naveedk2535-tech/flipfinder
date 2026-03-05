@@ -3,7 +3,9 @@ flask-sqlalchemy
 flask-login
 flask-bcrypt
 flask-wtf
-anthropic
+google-genai
+groq
+duckduckgo-search
 python-dotenv
 pillow
 requests
