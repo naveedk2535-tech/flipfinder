@@ -7,30 +7,39 @@ from google.genai import types
 
 logger = logging.getLogger(__name__)
 
-_client = None
+_gemini_client = None
+_groq_client = None
 
-# Model preference order — tries best first, falls back automatically
-MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"]
+# Gemini model preference order — best first, falls back automatically
+GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"]
 
 
-def _get_client():
-    global _client
-    if _client is None:
+def _get_gemini_client():
+    global _gemini_client
+    if _gemini_client is None:
         api_key = os.environ.get('GEMINI_API_KEY', '')
         if not api_key:
             raise ValueError("GEMINI_API_KEY not set")
-        _client = genai.Client(api_key=api_key)
-    return _client
+        _gemini_client = genai.Client(api_key=api_key)
+    return _gemini_client
 
 
-def _call_model(model: str, parts: list, use_search: bool) -> str:
-    """Attempt a single model call. Raises on failure."""
-    client = _get_client()
+def _get_groq_client():
+    global _groq_client
+    if _groq_client is None:
+        from groq import Groq
+        api_key = os.environ.get('GROQ_API_KEY', '')
+        if not api_key:
+            raise ValueError("GROQ_API_KEY not set")
+        _groq_client = Groq(api_key=api_key)
+    return _groq_client
 
-    config_kwargs = {
-        "max_output_tokens": 1500,
-        "temperature": 0.2,
-    }
+
+def _call_gemini(model: str, parts: list, use_search: bool) -> str:
+    """Call a single Gemini model. Raises on any failure."""
+    client = _get_gemini_client()
+
+    config_kwargs = {"max_output_tokens": 1500, "temperature": 0.2}
 
     if use_search:
         config_kwargs["tools"] = [
@@ -49,7 +58,6 @@ def _call_model(model: str, parts: list, use_search: bool) -> str:
         contents=parts,
         config=types.GenerateContentConfig(**config_kwargs)
     )
-
     text_parts = [
         part.text for candidate in response.candidates
         for part in candidate.content.parts
@@ -58,16 +66,29 @@ def _call_model(model: str, parts: list, use_search: bool) -> str:
     return " ".join(text_parts).strip()
 
 
+def _call_groq(prompt_text: str) -> str:
+    """Call Groq llama-3.3-70b as final fallback (no image, no search)."""
+    client = _get_groq_client()
+    logger.info("Using Groq llama-3.3-70b as fallback")
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt_text}],
+        max_tokens=1500,
+        temperature=0.2,
+    )
+    return response.choices[0].message.content.strip()
+
+
 def run_with_search(prompt: str, image_base64: str = None,
                     image_media_type: str = None, use_search: bool = True) -> str:
     """
-    Call Gemini with Google Search grounding and optional image support.
-    Tries models in order: gemini-2.5-flash → gemini-2.5-flash-lite → gemini-1.5-flash
-    Automatically falls back if a model returns 429 or quota error.
-    Free tier: 1500 req/day on 1.5-flash minimum.
+    Call Gemini with Google Search grounding + image support.
+    Fallback chain:
+      gemini-2.5-flash → gemini-2.5-flash-lite → gemini-1.5-flash → Groq llama-3.3-70b
+    Quota errors silently trigger the next option. Never returns empty.
     """
+    # Build Gemini parts
     parts = []
-
     if image_base64:
         try:
             image_bytes = base64.b64decode(image_base64)
@@ -77,48 +98,32 @@ def run_with_search(prompt: str, image_base64: str = None,
             ))
         except Exception as e:
             logger.warning(f"Image decode error: {e}")
-
     parts.append(types.Part.from_text(text=prompt))
 
-    # Try each model in preference order
-    last_error = None
-    for model in MODELS:
-        try:
-            result = _call_model(model, parts, use_search)
-            if result:
-                logger.info(f"Success with model: {model}")
-                return result
-        except Exception as e:
-            err_str = str(e)
-            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
-                logger.warning(f"{model} quota exceeded, trying next model...")
-                last_error = e
-                continue
-            # Non-quota error — try without search then give up
-            if use_search:
-                logger.warning(f"{model} error with search, retrying without: {e}")
-                try:
-                    client = _get_client()
-                    response = client.models.generate_content(
-                        model=model,
-                        contents=parts,
-                        config=types.GenerateContentConfig(
-                            max_output_tokens=1500,
-                            temperature=0.2
-                        )
-                    )
-                    text_parts = [
-                        part.text for candidate in response.candidates
-                        for part in candidate.content.parts
-                        if hasattr(part, 'text') and part.text
-                    ]
-                    result = " ".join(text_parts).strip()
-                    if result:
-                        return result
-                except Exception as e2:
-                    last_error = e2
-                    continue
-            last_error = e
-            continue
+    # Try Gemini models in order
+    for model in GEMINI_MODELS:
+        for attempt_search in ([True, False] if use_search else [False]):
+            try:
+                result = _call_gemini(model, parts, attempt_search)
+                if result:
+                    logger.info(f"Gemini success: {model} (search={attempt_search})")
+                    return result
+            except Exception as e:
+                err = str(e)
+                is_quota = "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower()
+                if is_quota:
+                    logger.warning(f"{model} quota exceeded, trying next...")
+                    break  # skip to next model entirely
+                elif attempt_search:
+                    logger.warning(f"{model} search error, retrying without search: {e}")
+                    continue  # retry same model without search
+                else:
+                    logger.warning(f"{model} failed: {e}")
+                    break  # try next model
 
-    raise ValueError(f"All Gemini models failed. Last error: {last_error}")
+    # Final fallback: Groq (no image, no search — but returns valid JSON structure)
+    try:
+        return _call_groq(prompt)
+    except Exception as e:
+        logger.error(f"Groq fallback also failed: {e}")
+        raise ValueError(f"All AI providers failed. Last error: {e}")
