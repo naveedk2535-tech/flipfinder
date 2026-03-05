@@ -23,17 +23,16 @@ def _get_client():
 def run_with_search(prompt: str, image_base64: str = None,
                     image_media_type: str = None, use_search: bool = True) -> str:
     """
-    Call Gemini 2.0 Flash with:
-    - Native Google Search grounding (real-time web results, no extra cost)
-    - Native image understanding (photo → full product analysis)
-    - Free tier: 1500 requests/day, 1M tokens/minute
+    Call Gemini 1.5 Flash (free tier: 1500 req/day) with:
+    - Google Search grounding for live price/market research
+    - Native image understanding for product photos
     """
     client = _get_client()
 
     # Build content parts
     parts = []
 
-    # Image support — Gemini 2.0 Flash reads images natively
+    # Image support — Gemini 1.5 Flash reads images natively
     if image_base64:
         try:
             image_bytes = base64.b64decode(image_base64)
@@ -48,42 +47,53 @@ def run_with_search(prompt: str, image_base64: str = None,
 
     parts.append(types.Part.from_text(text=prompt))
 
-    # Config with optional Google Search grounding
-    tool_list = []
-    if use_search:
-        tool_list = [types.Tool(google_search=types.GoogleSearch())]
+    # Google Search grounding for gemini-1.5-flash uses google_search_retrieval
+    config_kwargs = {
+        "max_output_tokens": 1500,
+        "temperature": 0.2,
+    }
 
-    config = types.GenerateContentConfig(
-        max_output_tokens=1500,
-        temperature=0.2,
-        tools=tool_list if tool_list else None
-    )
+    if use_search:
+        config_kwargs["tools"] = [
+            types.Tool(
+                google_search_retrieval=types.GoogleSearchRetrieval(
+                    dynamic_retrieval_config=types.DynamicRetrievalConfig(
+                        mode=types.DynamicRetrievalConfigMode.MODE_DYNAMIC,
+                        dynamic_threshold=0.3
+                    )
+                )
+            )
+        ]
+
+    config = types.GenerateContentConfig(**config_kwargs)
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-1.5-flash",
             contents=parts,
             config=config
         )
-        # Extract text — response may include grounding chunks alongside text
         text_parts = []
         for candidate in response.candidates:
             for part in candidate.content.parts:
                 if hasattr(part, 'text') and part.text:
                     text_parts.append(part.text)
-        return " ".join(text_parts).strip()
+        result = " ".join(text_parts).strip()
+        if not result:
+            result = response.text
+        return result
 
     except Exception as e:
         logger.error(f"Gemini API error: {e}")
         # Retry without search if search caused the failure
-        if tool_list:
+        if use_search:
             logger.info("Retrying without search tools...")
             config_no_search = types.GenerateContentConfig(
                 max_output_tokens=1500,
                 temperature=0.2
             )
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-1.5-flash",
                 contents=parts,
                 config=config_no_search
             )
