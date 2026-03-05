@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% block title %}Results — FlipFinder{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-10">
+
+  <!-- Loading State -->
+  {% if analysis.status in ["pending", "processing"] %}
+  <div class="text-center py-20">
+    <div class="w-20 h-20 rounded-full bg-indigo-500/20 flex items-center justify-center mx-auto mb-6 animate-pulse">
+      <i data-lucide="cpu" class="w-10 h-10 text-indigo-400"></i>
+    </div>
+    <h1 class="font-heading font-bold text-2xl text-gradient mb-3">AI Agents Working...</h1>
+    <p class="text-[#52526a] mb-8">This usually takes 20-40 seconds</p>
+    <div class="max-w-xs mx-auto space-y-3">
+      {% for step, label in [("extract","Extracting product details"),("price","Researching sold prices"),("source","Finding sourcing deals"),("arb","Calculating arbitrage")] %}
+      <div class="agent-step flex items-center gap-3 bg-[#18181f] border border-[#252532] rounded-xl px-4 py-3">
+        <div class="loading-dots flex gap-1">
+          <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
+          <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
+          <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
+        </div>
+        <span class="text-sm text-[#f1f5f9]/70">{{ label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <script>setTimeout(() => location.reload(), 4000);</script>
+
+  <!-- Error State -->
+  {% elif analysis.status == "error" %}
+  <div class="text-center py-20">
+    <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+      <i data-lucide="alert-circle" class="w-8 h-8 text-red-400"></i>
+    </div>
+    <h1 class="font-heading font-bold text-2xl text-red-400 mb-3">Analysis Failed</h1>
+    <p class="text-[#52526a] mb-2">{{ analysis.error_message or "An unexpected error occurred." }}</p>
+    <a href="{{ url_for("analysis.input_page") }}" class="btn-primary mt-6 inline-block px-6 py-3">Try Again</a>
+  </div>
+
+  <!-- Complete State -->
+  {% elif analysis.status == "complete" %}
+  {% set arb = analysis.get_arbitrage() %}
+  {% set pricing = analysis.get_pricing() %}
+  {% set sourcing = analysis.get_sourcing() %}
+  {% set extracted = analysis.get_extracted() %}
+  {% set roi = analysis.get_roi_value() %}
+
+  <!-- Arbitrage Hero -->
+  <div class="arbitrage-hero card p-8 mb-8">
+    <div class="flex flex-col lg:flex-row lg:items-center gap-8">
+      <div class="text-center lg:text-left">
+        <div class="text-[#52526a] text-sm font-medium mb-1">Return on Investment</div>
+        <div class="font-heading font-extrabold text-7xl {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %} mb-2">
+          {{ "%.0f"|format(roi) }}%
+        </div>
+        <div class="verdict-badge verdict-{{ arb.get("verdict","avoid").lower().replace(" ","_") }} inline-block mb-4">
+          {{ arb.get("verdict", "—") }}
+        </div>
+        <p class="text-[#f1f5f9]/70 text-sm max-w-md">{{ arb.get("recommendation", "") }}</p>
+      </div>
+      <div class="flex-1 grid grid-cols-2 gap-4">
+        <div class="bg-[#111118] rounded-xl p-4 text-center">
+          <div class="text-[#52526a] text-xs mb-1">Buy At</div>
+          <div class="font-heading font-bold text-xl text-[#f1f5f9]">£{{ "%.2f"|format(arb.get("buy_price",0)) }}</div>
+        </div>
+        <div class="bg-[#111118] rounded-xl p-4 text-center">
+          <div class="text-[#52526a] text-xs mb-1">Sell At</div>
+          <div class="font-heading font-bold text-xl text-[#f1f5f9]">£{{ "%.2f"|format(arb.get("sell_price",0)) }}</div>
+        </div>
+        <div class="bg-[#111118] rounded-xl p-4 text-center">
+          <div class="text-[#52526a] text-xs mb-1">Net Profit</div>
+          <div class="font-heading font-bold text-xl {% if arb.get("net_profit",0) > 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+            £{{ "%.2f"|format(arb.get("net_profit",0)) }}
+          </div>
+        </div>
+        <div class="bg-[#111118] rounded-xl p-4 text-center">
+          <div class="text-[#52526a] text-xs mb-1">Best Platform</div>
+          <div class="font-heading font-bold text-xl text-indigo-400">{{ arb.get("best_platform", "—") }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Opportunity score -->
+    <div class="mt-6">
+      <div class="flex justify-between text-sm mb-2">
+        <span class="text-[#52526a]">Opportunity Score</span>
+        <span class="font-bold text-[#f1f5f9]">{{ arb.get("opportunity_score",0) }}/100</span>
+      </div>
+      <div class="bg-[#111118] rounded-full h-3 overflow-hidden">
+        <div class="opportunity-bar h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000"
+          data-width="{{ arb.get("opportunity_score",0) }}" style="width:0%"></div>
+      </div>
+      <div class="flex justify-between text-xs text-[#52526a] mt-2">
+        <span>Risk: <span class="capitalize">{{ arb.get("risk_rating","—") }}</span></span>
+        <span>Confidence: {{ pricing.get("confidence","—") }}</span>
+        <span>Trend: {{ pricing.get("price_trend","—") }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Platform Breakdown -->
+  {% if arb.get("platform_breakdown") %}
+  <div class="card p-6 mb-8">
+    <h2 class="font-heading font-bold text-lg mb-5">Platform Breakdown</h2>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {% for p in arb.get("platform_breakdown",[]) %}
+      <div class="platform-card {% if p.platform == arb.get("best_platform") %}platform-best{% endif %} p-4 rounded-xl text-center">
+        {% if p.platform == arb.get("best_platform") %}
+          <div class="text-indigo-400 text-xs font-bold mb-1">BEST OPTION</div>
+        {% endif %}
+        <div class="font-heading font-bold text-base mb-1">{{ p.platform }}</div>
+        <div class="text-xs text-[#52526a] mb-2">{{ p.fee_pct }}% fee</div>
+        <div class="font-bold {% if p.net_profit > 0 %}text-emerald-400{% else %}text-red-400{% endif %} text-lg">
+          £{{ "%.2f"|format(p.net_profit) }}
+        </div>
+        <div class="text-xs text-[#52526a]">{{ "%.0f"|format(p.net_roi) }}% ROI</div>
+      </div>
+      {% endfor %}
+    </div>
+    <!-- Bar chart -->
+    <div class="flex items-end gap-3 h-24">
+      {% for p in arb.get("platform_breakdown",[]) %}
+      {% set max_profit = arb.get("platform_breakdown",[{"net_profit":1}]) | map(attribute="net_profit") | max %}
+      {% set pct = ((p.net_profit / max_profit) * 100) | int if max_profit > 0 else 0 %}
+      <div class="flex-1 flex flex-col items-center gap-1">
+        <div class="w-full chart-bar {% if p.platform == arb.get("best_platform") %}bg-indigo-500{% else %}bg-[#252532]{% endif %} rounded-t-md transition-all duration-700"
+          data-height="{{ [pct,5]|max }}" style="height:0px"></div>
+        <div class="text-xs text-[#52526a]">{{ p.platform }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Product Details -->
+  <div class="card p-6 mb-8">
+    <h2 class="font-heading font-bold text-lg mb-5">Product Details</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+      {% for label, key in [("Brand","brand"),("Type","product_type"),("Model","model"),("Condition","condition"),("Size","size"),("Era","era"),("Materials","materials")] %}
+      {% if extracted.get(key) %}
+      <div class="flex flex-col gap-1">
+        <span class="text-[#52526a] text-xs uppercase tracking-wider">{{ label }}</span>
+        <span class="text-[#f1f5f9] font-medium">{{ extracted[key] }}</span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% if extracted.get("colors") %}
+    <div class="mt-4">
+      <span class="text-[#52526a] text-xs uppercase tracking-wider block mb-2">Colors</span>
+      <div class="flex flex-wrap gap-2">
+        {% for c in extracted.colors %}<span class="bg-[#252532] text-[#f1f5f9]/80 px-3 py-1 rounded-full text-xs">{{ c }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if extracted.get("style_descriptors") %}
+    <div class="mt-4">
+      <span class="text-[#52526a] text-xs uppercase tracking-wider block mb-2">Style Tags</span>
+      <div class="flex flex-wrap gap-2">
+        {% for s in extracted.style_descriptors %}<span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-3 py-1 rounded-full text-xs">{{ s }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if extracted.get("notable_features") %}
+    <div class="mt-4">
+      <span class="text-[#52526a] text-xs uppercase tracking-wider">Notable Features</span>
+      <p class="text-[#f1f5f9]/80 text-sm mt-1">{{ extracted.notable_features }}</p>
+    </div>
+    {% endif %}
+    {% if extracted.get("auction_relevance") %}
+    <div class="mt-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+      <span class="text-amber-400 text-xs font-bold uppercase">Auction Relevance</span>
+      <p class="text-[#f1f5f9]/80 text-sm mt-1">{{ extracted.auction_relevance }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Market Prices -->
+  <div class="card p-6 mb-8">
+    <h2 class="font-heading font-bold text-lg mb-5">Market Prices</h2>
+    {% set min_p = pricing.get("min_sold",0) %}
+    {% set max_p = pricing.get("max_sold",0) %}
+    {% set avg_p = pricing.get("avg_sold",0) %}
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="text-center">
+        <div class="text-[#52526a] text-xs mb-1">Min Sold</div>
+        <div class="font-bold text-xl text-[#f1f5f9]">£{{ "%.0f"|format(min_p) }}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-[#52526a] text-xs mb-1">Avg Sold</div>
+        <div class="font-bold text-xl text-indigo-400">£{{ "%.0f"|format(avg_p) }}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-[#52526a] text-xs mb-1">Max Sold</div>
+        <div class="font-bold text-xl text-[#f1f5f9]">£{{ "%.0f"|format(max_p) }}</div>
+      </div>
+    </div>
+    <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 text-center mb-6">
+      <div class="text-[#52526a] text-xs mb-1">Recommended Sell Price</div>
+      <div class="font-heading font-extrabold text-3xl text-indigo-400">£{{ "%.2f"|format(pricing.get("recommended_sell_price",0)) }}</div>
+    </div>
+    {% if pricing.get("market_notes") %}
+    <p class="text-[#f1f5f9]/60 text-sm mb-4">{{ pricing.market_notes }}</p>
+    {% endif %}
+    {% if pricing.get("sources") %}
+    <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mb-3">Sold Listings</h3>
+    <div class="space-y-2">
+      {% for s in pricing.sources[:6] %}
+      <div class="flex items-center justify-between bg-[#111118] rounded-lg px-4 py-2.5 text-sm">
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-[#f1f5f9] truncate">{{ s.get("title","—") }}</div>
+          <div class="text-[#52526a] text-xs">{{ s.get("platform","") }} — {{ s.get("date","") }}</div>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0 ml-3">
+          <span class="font-bold text-emerald-400">£{{ "%.0f"|format(s.get("price",0)) }}</span>
+          {% if s.get("url") %}<a href="{{ s.url }}" target="_blank" class="text-indigo-400 text-xs hover:underline">View</a>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if pricing.get("auction_prices") %}
+    <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mt-5 mb-3">Auction Results</h3>
+    <div class="space-y-2">
+      {% for a in pricing.auction_prices %}
+      <div class="flex items-center justify-between bg-amber-900/20 border border-amber-500/20 rounded-lg px-4 py-2.5 text-sm">
+        <div class="flex-1">
+          <div class="font-medium text-[#f1f5f9]">{{ a.get("house","") }}</div>
+          <div class="text-[#52526a] text-xs">{{ a.get("lot_description","") }} — {{ a.get("date","") }}</div>
+        </div>
+        <span class="font-bold text-amber-400">£{{ "%.0f"|format(a.get("price",0)) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Sourcing Deals -->
+  <div class="card p-6 mb-8">
+    <h2 class="font-heading font-bold text-lg mb-5">Sourcing Deals</h2>
+    {% if sourcing.get("best_deals") %}
+    <div class="space-y-3 mb-6">
+      {% for d in sourcing.best_deals[:5] %}
+      <div class="flex items-center justify-between bg-[#111118] rounded-xl px-4 py-3 text-sm">
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-[#f1f5f9] truncate">{{ d.get("title","—") }}</div>
+          <div class="text-[#52526a] text-xs">{{ d.get("platform","") }} — {{ d.get("condition","") }}</div>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0 ml-3">
+          <span class="font-bold text-emerald-400">£{{ "%.2f"|format(d.get("price",0)) }}</span>
+          {% if d.get("buy_link") or d.get("url") %}
+          <a href="{{ d.get("buy_link") or d.get("url") }}" target="_blank"
+            class="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-500 transition-colors">Buy Now</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if sourcing.get("similar_by_style") %}
+    <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mb-3">Similar by Style</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+      {% for item in sourcing.similar_by_style[:4] %}
+      <div class="bg-[#111118] rounded-xl p-3 text-sm">
+        <div class="font-medium text-[#f1f5f9] mb-1">{{ item.get("item","") }}</div>
+        <div class="text-[#52526a] text-xs mb-2">{{ item.get("why_similar","") }}</div>
+        <div class="flex justify-between items-center">
+          <span class="text-indigo-400 font-bold">£{{ "%.2f"|format(item.get("price",0)) }}</span>
+          <span class="text-[#52526a] text-xs">{{ item.get("platform","") }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if sourcing.get("similar_by_color") %}
+    <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mb-3">Similar by Color</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {% for item in sourcing.similar_by_color[:4] %}
+      <div class="bg-[#111118] rounded-xl p-3 text-sm">
+        <div class="font-medium text-[#f1f5f9] mb-1">{{ item.get("item","") }}</div>
+        <div class="text-[#52526a] text-xs mb-2">{{ item.get("why_similar","") }}</div>
+        <div class="flex justify-between items-center">
+          <span class="text-indigo-400 font-bold">£{{ "%.2f"|format(item.get("price",0)) }}</span>
+          <span class="text-[#52526a] text-xs">{{ item.get("platform","") }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if sourcing.get("sourcing_notes") %}
+    <p class="text-[#f1f5f9]/50 text-sm mt-4">{{ sourcing.sourcing_notes }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Actions -->
+  <div class="flex gap-3">
+    <a href="{{ url_for("analysis.input_page") }}" class="btn-primary px-6 py-3">
+      <i data-lucide="plus" class="w-4 h-4 mr-2 inline"></i> New Analysis
+    </a>
+    <a href="{{ url_for("dashboard.home") }}" class="btn-outline px-6 py-3">Dashboard</a>
+  </div>
+
+  {% endif %}
+</div>
+
+<script>
+  // Animate opportunity bar and chart bars on load
+  document.addEventListener("DOMContentLoaded", () => {
+    const oBar = document.querySelector(".opportunity-bar");
+    if (oBar) {
+      setTimeout(() => { oBar.style.width = oBar.dataset.width + "%"; }, 100);
+    }
+    document.querySelectorAll(".chart-bar").forEach(bar => {
+      const h = bar.dataset.height;
+      setTimeout(() => { bar.style.height = h + "%"; }, 200);
+    });
+    lucide.createIcons();
+  });
+</script>
+{% endblock %}

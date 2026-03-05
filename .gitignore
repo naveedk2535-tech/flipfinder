@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+instance/
+static/uploads/*
+!static/uploads/.gitkeep
+flipfinder.db
+.DS_Store
+*.egg-info/
+venv/
+env/
+.venv/
+*.sqlite
+*.log

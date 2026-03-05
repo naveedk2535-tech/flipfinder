@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Edit Analysis — Admin{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-10">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-heading font-bold text-2xl text-gradient">Edit Analysis #{{ analysis.id }}</h1>
+    <a href="{{ url_for('admin.analyses') }}" class="text-sm text-indigo-400 hover:underline">← Analyses</a>
+  </div>
+
+  <div class="card p-8">
+    <form method="POST" action="{{ url_for('admin.edit_analysis', id=analysis.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Status</label>
+          <select name="status" class="input-field w-full">
+            {% for s in ['pending','processing','complete','error'] %}
+            <option value="{{ s }}" {% if analysis.status == s %}selected{% endif %}>{{ s | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Raw Input</label>
+          <textarea name="raw_input" rows="3" class="input-field w-full resize-none font-mono text-xs">{{ analysis.raw_input or '' }}</textarea>
+        </div>
+        {% for field, label in [('extracted_product','Extracted Product JSON'),('price_research','Price Research JSON'),('sourcing_results','Sourcing Results JSON'),('arbitrage_result','Arbitrage Result JSON')] %}
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">{{ label }}</label>
+          <textarea name="{{ field }}" rows="6" class="input-field w-full resize-y font-mono text-xs">{{ getattr(analysis, field) or '' }}</textarea>
+        </div>
+        {% endfor %}
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Error Message</label>
+          <textarea name="error_message" rows="2" class="input-field w-full resize-none">{{ analysis.error_message or '' }}</textarea>
+        </div>
+        <div class="flex gap-3">
+          <button type="submit" class="btn-primary flex-1 py-3">Save Changes</button>
+          <a href="{{ url_for('admin.analyses') }}" class="btn-outline flex-1 py-3 text-center">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

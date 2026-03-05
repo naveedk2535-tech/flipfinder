@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Edit User — Admin{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-10">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-heading font-bold text-2xl text-gradient">Edit User #{{ user.id }}</h1>
+    <a href="{{ url_for('admin.users') }}" class="text-sm text-indigo-400 hover:underline">← Users</a>
+  </div>
+
+  <div class="card p-8">
+    <form method="POST" action="{{ url_for('admin.edit_user', id=user.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Name</label>
+          <input type="text" name="name" value="{{ user.name }}" required class="input-field w-full">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Email</label>
+          <input type="email" name="email" value="{{ user.email }}" required class="input-field w-full">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Location</label>
+          <input type="text" name="location" value="{{ user.location or '' }}" class="input-field w-full">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Bio</label>
+          <textarea name="bio" rows="3" class="input-field w-full resize-none">{{ user.bio or '' }}</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Subscription Tier</label>
+          <select name="subscription_tier" class="input-field w-full">
+            {% for tier in ['free','pro','premium'] %}
+            <option value="{{ tier }}" {% if user.subscription_tier == tier %}selected{% endif %}>{{ tier | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Subscription Status</label>
+          <select name="subscription_status" class="input-field w-full">
+            {% for s in ['active','cancelled','trial'] %}
+            <option value="{{ s }}" {% if user.subscription_status == s %}selected{% endif %}>{{ s | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="flex gap-6">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="is_admin" {% if user.is_admin %}checked{% endif %}>
+            <span class="text-sm text-[#f1f5f9]/70">Is Admin</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="is_active_account" {% if user.is_active_account %}checked{% endif %}>
+            <span class="text-sm text-[#f1f5f9]/70">Account Active</span>
+          </label>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Reset Password (leave blank to keep)</label>
+          <input type="password" name="new_password" placeholder="New password" class="input-field w-full">
+        </div>
+        <div class="flex gap-3">
+          <button type="submit" class="btn-primary flex-1 py-3">Save Changes</button>
+          <a href="{{ url_for('admin.users') }}" class="btn-outline flex-1 py-3 text-center">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

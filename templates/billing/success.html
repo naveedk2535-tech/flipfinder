@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Success — FlipFinder{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="text-center">
+    <div class="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
+      <i data-lucide="check-circle" class="w-10 h-10 text-emerald-400"></i>
+    </div>
+    <h1 class="font-heading font-bold text-3xl text-gradient mb-3">All Set!</h1>
+    <p class="text-[#52526a] mb-8">Your account is active. All features are free during beta.</p>
+    <a href="{{ url_for("dashboard.home") }}" class="btn-primary px-8 py-3">Go to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

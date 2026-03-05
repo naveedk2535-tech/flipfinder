@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Analyses — Admin{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-heading font-bold text-2xl text-gradient">Analyses</h1>
+    <a href="{{ url_for('admin.dashboard') }}" class="text-sm text-indigo-400 hover:underline">← Dashboard</a>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="flex gap-2 mb-6">
+    {% for s in ['all','complete','processing','error','pending'] %}
+    <a href="{{ url_for('admin.analyses', status=s) }}"
+      class="px-3 py-1.5 rounded-lg text-sm {% if status_filter == s %}bg-indigo-600 text-white{% else %}bg-[#18181f] border border-[#252532] text-[#f1f5f9]/70 hover:border-indigo-500{% endif %}">
+      {{ s | capitalize }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="card overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="border-b border-[#252532]">
+        <tr class="text-[#52526a] text-left">
+          <th class="px-4 py-3">ID</th>
+          <th class="px-4 py-3">User</th>
+          <th class="px-4 py-3">Product</th>
+          <th class="px-4 py-3">Type</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3">ROI</th>
+          <th class="px-4 py-3">Date</th>
+          <th class="px-4 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[#252532]">
+        {% for a in pagination.items %}
+        <tr class="hover:bg-[#252532]/50 transition-colors">
+          <td class="px-4 py-3 text-[#52526a]">#{{ a.id }}</td>
+          <td class="px-4 py-3 text-[#f1f5f9]">#{{ a.user_id }}</td>
+          <td class="px-4 py-3 max-w-xs truncate text-[#f1f5f9]">{{ a.get_product_summary() }}</td>
+          <td class="px-4 py-3 text-[#52526a] capitalize">{{ a.input_type }}</td>
+          <td class="px-4 py-3"><span class="status-badge status-{{ a.status }}">{{ a.status }}</span></td>
+          <td class="px-4 py-3">
+            {% if a.status == 'complete' %}
+              {% set roi = a.get_roi_value() %}
+              <span class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %}">
+                {{ "%.0f"|format(roi) }}%
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="px-4 py-3 text-[#52526a]">{{ a.created_at.strftime('%d %b %Y') }}</td>
+          <td class="px-4 py-3">
+            <div class="flex gap-2">
+              <a href="{{ url_for('admin.edit_analysis', id=a.id) }}" class="text-indigo-400 text-xs hover:underline">Edit</a>
+              <form method="POST" action="{{ url_for('admin.delete_analysis', id=a.id) }}" class="inline"
+                onsubmit="return confirm('Delete this analysis?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="text-red-400 text-xs hover:underline">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="flex justify-center gap-2 mt-6">
+    {% for p in pagination.iter_pages() %}
+      {% if p %}
+        <a href="{{ url_for('admin.analyses', page=p, status=status_filter) }}"
+          class="px-3 py-1.5 rounded-lg text-sm {% if p == pagination.page %}bg-indigo-600 text-white{% else %}bg-[#18181f] border border-[#252532] text-[#f1f5f9]/70{% endif %}">
+          {{ p }}
+        </a>
+      {% else %}<span class="px-2 text-[#52526a]">…</span>{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

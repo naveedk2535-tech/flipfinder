@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Log In — FlipFinder{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4 py-16">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <h1 class="font-heading font-extrabold text-3xl text-gradient mb-2">Welcome Back</h1>
+      <p class="text-[#52526a]">Log in to your FlipFinder account</p>
+    </div>
+    <div class="card p-8">
+      <form method="POST" action="{{ url_for('auth.login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Email Address</label>
+            <input type="email" name="email" required placeholder="you@example.com"
+              class="input-field w-full" value="{{ request.form.get('email', '') }}">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Password</label>
+            <input type="password" name="password" required placeholder="Your password"
+              class="input-field w-full">
+          </div>
+          <button type="submit" class="btn-primary w-full py-3 text-base mt-2">
+            Log In
+          </button>
+        </div>
+      </form>
+      <p class="text-center text-sm text-[#52526a] mt-6">
+        No account yet? <a href="{{ url_for('auth.signup') }}" class="text-indigo-400 hover:underline">Sign up free</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Sign Up — FlipFinder{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4 py-16">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <h1 class="font-heading font-extrabold text-3xl text-gradient mb-2">Create Account</h1>
+      <p class="text-[#52526a]">Start flipping smarter — free during beta</p>
+    </div>
+    <div class="card p-8">
+      <form method="POST" action="{{ url_for('auth.signup') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Full Name</label>
+            <input type="text" name="name" required minlength="2" placeholder="Your name"
+              class="input-field w-full" value="{{ request.form.get('name', '') }}">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Email Address</label>
+            <input type="email" name="email" required placeholder="you@example.com"
+              class="input-field w-full" value="{{ request.form.get('email', '') }}">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Password</label>
+            <input type="password" name="password" required minlength="8" placeholder="Min. 8 characters"
+              class="input-field w-full">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Confirm Password</label>
+            <input type="password" name="confirm_password" required placeholder="Repeat password"
+              class="input-field w-full">
+          </div>
+          <div class="flex items-start gap-3">
+            <input type="checkbox" name="terms" id="terms" required class="mt-1 rounded">
+            <label for="terms" class="text-sm text-[#f1f5f9]/60">
+              I agree to the <a href="#" class="text-indigo-400 hover:underline">Terms of Service</a> and <a href="#" class="text-indigo-400 hover:underline">Privacy Policy</a>
+            </label>
+          </div>
+          <button type="submit" class="btn-primary w-full py-3 text-base mt-2">
+            Create Free Account
+          </button>
+        </div>
+      </form>
+      <p class="text-center text-sm text-[#52526a] mt-6">
+        Already have an account? <a href="{{ url_for('auth.login') }}" class="text-indigo-400 hover:underline">Log in</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

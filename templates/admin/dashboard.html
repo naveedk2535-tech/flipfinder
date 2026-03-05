@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Admin — FlipFinder{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="font-heading font-bold text-2xl text-gradient">Admin Dashboard</h1>
+      <div class="flex gap-3 mt-2">
+        <a href="{{ url_for('admin.users') }}" class="text-sm text-indigo-400 hover:underline">Users</a>
+        <a href="{{ url_for('admin.analyses') }}" class="text-sm text-indigo-400 hover:underline">Analyses</a>
+        <a href="{{ url_for('admin.visitors') }}" class="text-sm text-indigo-400 hover:underline">Visitors</a>
+      </div>
+    </div>
+    <span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold">ADMIN</span>
+  </div>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="stat-card">
+      <div class="text-[#52526a] text-sm mb-1">Total Users</div>
+      <div class="font-heading font-bold text-3xl">{{ total_users }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="text-[#52526a] text-sm mb-1">Active Subs</div>
+      <div class="font-heading font-bold text-3xl text-emerald-400">{{ active_subs }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="text-[#52526a] text-sm mb-1">Analyses Today</div>
+      <div class="font-heading font-bold text-3xl">{{ analyses_today }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="text-[#52526a] text-sm mb-1">Est. MRR</div>
+      <div class="font-heading font-bold text-3xl text-indigo-400">£{{ "%.0f"|format(est_mrr) }}</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+    <div class="stat-card">
+      <div class="text-[#52526a] text-sm mb-1">Visitors Today</div>
+      <div class="font-heading font-bold text-2xl">{{ visitors_today }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="text-[#52526a] text-sm mb-1">Visitors This Week</div>
+      <div class="font-heading font-bold text-2xl">{{ visitors_week }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="text-[#52526a] text-sm mb-1">Total Analyses</div>
+      <div class="font-heading font-bold text-2xl">{{ total_analyses }}</div>
+    </div>
+  </div>
+
+  <!-- 7-day chart -->
+  <div class="card p-6 mb-8">
+    <h2 class="font-heading font-bold text-lg mb-5">7-Day Analysis Activity</h2>
+    <div class="flex items-end gap-3 h-32">
+      {% set max_count = chart_data | map(attribute='count') | max %}
+      {% for d in chart_data %}
+      {% set pct = ((d.count / max_count) * 100) | int if max_count > 0 else 5 %}
+      <div class="flex-1 flex flex-col items-center gap-1">
+        <div class="text-xs text-[#52526a]">{{ d.count }}</div>
+        <div class="w-full bg-indigo-500 rounded-t-md" style="height: {{ [pct, 5] | max }}%"></div>
+        <div class="text-xs text-[#52526a]">{{ d.date }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="card p-6">
+      <h2 class="font-heading font-bold text-lg mb-4">Recent Signups</h2>
+      <div class="space-y-2">
+        {% for u in recent_signups %}
+        <div class="flex items-center justify-between py-2 border-b border-[#252532] last:border-0 text-sm">
+          <div>
+            <div class="font-medium text-[#f1f5f9]">{{ u.name }}</div>
+            <div class="text-[#52526a] text-xs">{{ u.email }}</div>
+          </div>
+          <div class="text-[#52526a] text-xs">{{ u.created_at.strftime('%d %b') }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card p-6">
+      <h2 class="font-heading font-bold text-lg mb-4">Top Pages</h2>
+      <div class="space-y-2">
+        {% for path, visits in top_pages %}
+        <div class="flex items-center justify-between py-2 border-b border-[#252532] last:border-0 text-sm">
+          <span class="text-[#f1f5f9]/80 font-mono text-xs truncate max-w-xs">{{ path }}</span>
+          <span class="text-indigo-400 font-bold">{{ visits }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card p-6">
+    <h2 class="font-heading font-bold text-lg mb-4">Recent Analyses</h2>
+    <div class="space-y-2">
+      {% for a in recent_analyses %}
+      <div class="flex items-center justify-between py-2 border-b border-[#252532] last:border-0 text-sm">
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-[#f1f5f9] truncate">{{ a.get_product_summary() }}</div>
+          <div class="text-[#52526a] text-xs">User #{{ a.user_id }} — {{ a.created_at.strftime('%d %b %H:%M') }}</div>
+        </div>
+        <span class="status-badge status-{{ a.status }}">{{ a.status }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Profile — FlipFinder{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-10">
+  <h1 class="font-heading font-bold text-2xl text-gradient mb-8">Your Profile</h1>
+
+  <!-- Avatar + Info -->
+  <div class="card p-6 mb-6 flex items-center gap-5">
+    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+      {{ current_user.name[0].upper() }}
+    </div>
+    <div>
+      <div class="font-heading font-bold text-lg">{{ current_user.name }}</div>
+      <div class="text-[#52526a] text-sm">{{ current_user.email }}</div>
+      <span class="inline-block mt-1 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs px-2 py-0.5 rounded-full font-medium">
+        {{ current_user.subscription_tier | capitalize }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Edit form -->
+  <div class="card p-6 mb-6">
+    <h2 class="font-heading font-semibold text-lg mb-5">Edit Profile</h2>
+    <form method="POST" action="{{ url_for('dashboard.profile') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Full Name</label>
+          <input type="text" name="name" required minlength="2" value="{{ current_user.name }}"
+            class="input-field w-full">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Location</label>
+          <input type="text" name="location" value="{{ current_user.location or '' }}"
+            placeholder="City, Country" class="input-field w-full">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Bio <span class="text-[#52526a]">(500 chars max)</span></label>
+          <textarea name="bio" rows="3" maxlength="500" placeholder="Tell us about your flipping business…"
+            class="input-field w-full resize-none">{{ current_user.bio or '' }}</textarea>
+        </div>
+
+        <hr class="border-[#252532]">
+        <h3 class="font-semibold text-sm text-[#f1f5f9]/70">Change Password (leave blank to keep current)</h3>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">New Password</label>
+          <input type="password" name="new_password" minlength="8" placeholder="Min. 8 characters"
+            class="input-field w-full">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Confirm New Password</label>
+          <input type="password" name="confirm_password" placeholder="Repeat new password"
+            class="input-field w-full">
+        </div>
+
+        <button type="submit" class="btn-primary w-full py-3">Save Changes</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="card p-6 border-red-500/20">
+    <h2 class="font-heading font-semibold text-lg text-red-400 mb-3">Danger Zone</h2>
+    <p class="text-[#52526a] text-sm mb-4">Account deletion is permanent and cannot be undone.</p>
+    <button disabled class="bg-red-500/10 border border-red-500/30 text-red-400/50 px-4 py-2 rounded-lg text-sm cursor-not-allowed">
+      Delete Account — Contact support
+    </button>
+  </div>
+</div>
+{% endblock %}

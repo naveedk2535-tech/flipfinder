@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Analysis History — FlipFinder{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-10">
+  <div class="flex items-center justify-between mb-8">
+    <h1 class="font-heading font-bold text-2xl text-gradient">Analysis History</h1>
+    <a href="{{ url_for('analysis.input_page') }}" class="btn-primary px-5 py-2.5 text-sm">+ New Analysis</a>
+  </div>
+
+  {% if pagination.items %}
+    <div class="card overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="border-b border-[#252532]">
+          <tr class="text-[#52526a] text-left">
+            <th class="px-4 py-3 font-medium">Product</th>
+            <th class="px-4 py-3 font-medium">Type</th>
+            <th class="px-4 py-3 font-medium">Status</th>
+            <th class="px-4 py-3 font-medium">ROI</th>
+            <th class="px-4 py-3 font-medium">Date</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#252532]">
+          {% for a in pagination.items %}
+          <tr class="hover:bg-[#252532]/50 transition-colors cursor-pointer" onclick="window.location='{{ url_for('analysis.results', id=a.id) }}'">
+            <td class="px-4 py-3 font-medium text-[#f1f5f9] max-w-xs truncate">{{ a.get_product_summary() }}</td>
+            <td class="px-4 py-3 text-[#52526a] capitalize">{{ a.input_type }}</td>
+            <td class="px-4 py-3"><span class="status-badge status-{{ a.status }}">{{ a.status }}</span></td>
+            <td class="px-4 py-3">
+              {% if a.status == 'complete' %}
+                {% set roi = a.get_roi_value() %}
+                <span class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %}">
+                  {{ "%.0f"|format(roi) }}%
+                </span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-[#52526a]">{{ a.created_at.strftime('%d %b %Y') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="flex justify-center gap-2 mt-6">
+      {% for p in pagination.iter_pages() %}
+        {% if p %}
+          <a href="{{ url_for('dashboard.history', page=p) }}"
+            class="px-3 py-1.5 rounded-lg text-sm {% if p == pagination.page %}bg-indigo-600 text-white{% else %}bg-[#18181f] border border-[#252532] text-[#f1f5f9]/70 hover:border-indigo-500{% endif %}">
+            {{ p }}
+          </a>
+        {% else %}
+          <span class="px-2 text-[#52526a]">…</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% else %}
+    <div class="card p-16 text-center text-[#52526a]">
+      <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-4 opacity-30"></i>
+      <p>No analyses yet. <a href="{{ url_for('analysis.input_page') }}" class="text-indigo-400 hover:underline">Start your first one</a></p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

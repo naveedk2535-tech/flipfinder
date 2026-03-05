@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — FlipFinder{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div>
+      <h1 class="font-heading font-bold text-2xl text-gradient">Welcome back, {{ current_user.name.split()[0] }}</h1>
+      <p class="text-[#52526a] text-sm mt-1">
+        <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full text-xs font-medium">
+          {{ current_user.subscription_tier | capitalize }} — Beta: Unlimited Access
+        </span>
+      </p>
+    </div>
+    <a href="{{ url_for('analysis.input_page') }}" class="btn-primary px-6 py-3">
+      <i data-lucide="plus" class="w-4 h-4 mr-2 inline"></i> New Analysis
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+    <div class="stat-card">
+      <div class="text-[#52526a] text-sm mb-1">Total Analyses</div>
+      <div class="font-heading font-bold text-3xl text-[#f1f5f9]">{{ total_analyses }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="text-[#52526a] text-sm mb-1">This Month</div>
+      <div class="font-heading font-bold text-3xl text-[#f1f5f9]">{{ current_user.analyses_used_this_month }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="text-[#52526a] text-sm mb-1">Best ROI Ever</div>
+      <div class="font-heading font-bold text-3xl {% if best_roi >= 100 %}text-emerald-400{% elif best_roi >= 50 %}text-amber-400{% else %}text-[#f1f5f9]{% endif %}">{{ "%.0f"|format(best_roi) }}%</div>
+    </div>
+  </div>
+
+  <!-- Recent Analyses -->
+  <div class="card p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="font-heading font-bold text-lg">Recent Analyses</h2>
+      <a href="{{ url_for('dashboard.history') }}" class="text-sm text-indigo-400 hover:underline">View all</a>
+    </div>
+    {% if recent %}
+      <div class="space-y-3">
+        {% for a in recent %}
+        <a href="{{ url_for('analysis.results', id=a.id) }}" class="flex items-center gap-4 p-4 bg-[#111118] hover:bg-[#252532] rounded-xl transition-colors group">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
+            {% if a.status == 'complete' %}bg-emerald-500/20{% elif a.status == 'error' %}bg-red-500/20{% else %}bg-amber-500/20{% endif %}">
+            {% if a.status == 'complete' %}<i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i>
+            {% elif a.status == 'error' %}<i data-lucide="alert-circle" class="w-5 h-5 text-red-400"></i>
+            {% else %}<i data-lucide="loader" class="w-5 h-5 text-amber-400"></i>{% endif %}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-[#f1f5f9] truncate">{{ a.get_product_summary() }}</div>
+            <div class="text-[#52526a] text-xs mt-0.5">{{ a.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+          </div>
+          {% if a.status == 'complete' %}
+            {% set roi = a.get_roi_value() %}
+            <div class="text-right flex-shrink-0">
+              <div class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %}">
+                {{ "%.0f"|format(roi) }}% ROI
+              </div>
+              <div class="text-xs text-[#52526a]">{{ a.get_arbitrage().get('verdict', '') }}</div>
+            </div>
+          {% else %}
+            <span class="status-badge status-{{ a.status }}">{{ a.status | capitalize }}</span>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-16 text-[#52526a]">
+        <i data-lucide="search" class="w-12 h-12 mx-auto mb-4 opacity-30"></i>
+        <p class="text-lg font-medium">No analyses yet</p>
+        <p class="text-sm mt-1">Upload a product image or describe an item to get started</p>
+        <a href="{{ url_for('analysis.input_page') }}" class="btn-primary mt-6 inline-block px-6 py-2.5">
+          Start Your First Analysis
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

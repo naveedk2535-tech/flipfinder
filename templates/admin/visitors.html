@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Visitors — Admin{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-heading font-bold text-2xl text-gradient">Visitor Log</h1>
+    <a href="{{ url_for('admin.dashboard') }}" class="text-sm text-indigo-400 hover:underline">← Dashboard</a>
+  </div>
+
+  <div class="card overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="border-b border-[#252532]">
+        <tr class="text-[#52526a] text-left">
+          <th class="px-4 py-3">Time</th>
+          <th class="px-4 py-3">IP</th>
+          <th class="px-4 py-3">Path</th>
+          <th class="px-4 py-3">Method</th>
+          <th class="px-4 py-3">Referrer</th>
+          <th class="px-4 py-3">User Agent</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[#252532]">
+        {% for v in pagination.items %}
+        <tr class="hover:bg-[#252532]/50 transition-colors">
+          <td class="px-4 py-3 text-[#52526a] whitespace-nowrap">{{ v.created_at.strftime('%d %b %H:%M:%S') }}</td>
+          <td class="px-4 py-3 font-mono text-xs text-[#f1f5f9]">{{ v.ip_address }}</td>
+          <td class="px-4 py-3 font-mono text-xs text-indigo-400 max-w-xs truncate">{{ v.path }}</td>
+          <td class="px-4 py-3">
+            <span class="px-2 py-0.5 rounded text-xs font-bold
+              {% if v.method == 'GET' %}bg-emerald-500/20 text-emerald-400
+              {% else %}bg-amber-500/20 text-amber-400{% endif %}">
+              {{ v.method }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-[#52526a] text-xs max-w-xs truncate">{{ v.referrer or '—' }}</td>
+          <td class="px-4 py-3 text-[#52526a] text-xs max-w-xs truncate" title="{{ v.user_agent }}">
+            {{ (v.user_agent or '')[:60] }}{% if v.user_agent and v.user_agent|length > 60 %}…{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="flex justify-center gap-2 mt-6">
+    {% for p in pagination.iter_pages() %}
+      {% if p %}
+        <a href="{{ url_for('admin.visitors', page=p) }}"
+          class="px-3 py-1.5 rounded-lg text-sm {% if p == pagination.page %}bg-indigo-600 text-white{% else %}bg-[#18181f] border border-[#252532] text-[#f1f5f9]/70{% endif %}">
+          {{ p }}
+        </a>
+      {% else %}<span class="px-2 text-[#52526a]">…</span>{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

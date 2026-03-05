@@ -1,0 +1,289 @@
+/* ===== CSS CUSTOM PROPERTIES ===== */
+:root {
+  --bg: #09090f;
+  --surface: #111118;
+  --card: #18181f;
+  --border: #252532;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --text: #f1f5f9;
+  --muted: #52526a;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+/* ===== SELECTION ===== */
+::selection { background: rgba(99,102,241,0.3); color: var(--text); }
+
+/* ===== BASE ===== */
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+.font-heading { font-family: 'Syne', sans-serif !important; }
+
+/* ===== GRADIENT TEXT ===== */
+.text-gradient {
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 40%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== BUTTONS ===== */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+  color: white;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--primary-hover) 0%, #7c3aed 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(99,102,241,0.35);
+  color: white;
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+}
+.btn-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: rgba(99,102,241,0.3); }
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem;
+  transition: all 0.2s;
+}
+.stat-card:hover { border-color: rgba(99,102,241,0.3); transform: translateY(-2px); }
+
+/* ===== INPUTS ===== */
+.input-field {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  outline: none;
+}
+.input-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+.input-field::placeholder { color: var(--muted); }
+select.input-field option { background: var(--surface); color: var(--text); }
+
+/* ===== UPLOAD ZONE ===== */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  padding: 2.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.upload-zone:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+}
+.upload-zone.drag-over {
+  border-color: var(--primary);
+  background: rgba(99,102,241,0.05);
+}
+.upload-zone-content { pointer-events: none; }
+
+/* ===== STATUS BADGES ===== */
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.status-complete { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.status-processing { background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+.status-pending { background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
+.status-error { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+/* ===== VERDICT BADGES ===== */
+.verdict-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.verdict-strong_flip { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.verdict-decent_flip { background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
+.verdict-marginal { background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+.verdict-avoid { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+/* ===== GRID BACKGROUND ===== */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ===== STAT BADGES (landing) ===== */
+.stat-badge {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(241,245,249,0.8);
+}
+
+/* ===== LANDING CARDS ===== */
+.how-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  transition: all 0.2s;
+}
+.how-card:hover { border-color: rgba(99,102,241,0.4); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+
+.pricing-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+  transition: all 0.2s;
+}
+.popular-card {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+/* ===== CTA BANNER ===== */
+.cta-banner {
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+}
+
+/* ===== ARBITRAGE HERO ===== */
+.arbitrage-hero {
+  background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.05) 100%);
+  border: 1px solid rgba(99,102,241,0.2);
+}
+
+/* ===== PLATFORM CARDS ===== */
+.platform-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+.platform-best {
+  border-color: var(--primary);
+  background: rgba(99,102,241,0.1);
+}
+
+/* ===== CHART BARS ===== */
+.chart-bar {
+  transition: height 0.7s cubic-bezier(0.4,0,0.2,1);
+  min-height: 4px;
+}
+
+/* ===== OPPORTUNITY BAR ===== */
+.opportunity-bar {
+  transition: width 1s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ===== LOADING DOTS ===== */
+.loading-dots div {
+  animation: dot-pulse 1.4s infinite ease-in-out;
+}
+.loading-dots div:nth-child(1) { animation-delay: 0s; }
+.loading-dots div:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots div:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot-pulse {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* ===== AGENT STEPS ===== */
+.agent-step {
+  animation: fadeIn 0.5s ease forwards;
+  opacity: 0;
+}
+.agent-step:nth-child(1) { animation-delay: 0.1s; }
+.agent-step:nth-child(2) { animation-delay: 0.3s; }
+.agent-step:nth-child(3) { animation-delay: 0.5s; }
+.agent-step:nth-child(4) { animation-delay: 0.7s; }
+
+/* ===== FLASH MESSAGES ===== */
+.flash-msg {
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ===== PAGE ANIMATIONS ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn { animation: fadeIn 0.5s ease forwards; }
+.animate-slideUp { animation: slideUp 0.5s ease forwards; }

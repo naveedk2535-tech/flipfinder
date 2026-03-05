@@ -1,0 +1,11 @@
+flask
+flask-sqlalchemy
+flask-login
+flask-bcrypt
+flask-wtf
+anthropic
+python-dotenv
+pillow
+requests
+gunicorn
+email-validator

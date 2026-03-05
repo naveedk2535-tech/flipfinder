@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Users — Admin{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-heading font-bold text-2xl text-gradient">Users</h1>
+    <a href="{{ url_for('admin.dashboard') }}" class="text-sm text-indigo-400 hover:underline">← Dashboard</a>
+  </div>
+
+  <form method="GET" class="mb-6 flex gap-3">
+    <input type="text" name="search" value="{{ search }}" placeholder="Search by name or email..."
+      class="input-field flex-1">
+    <button type="submit" class="btn-primary px-5 py-2">Search</button>
+    {% if search %}<a href="{{ url_for('admin.users') }}" class="btn-outline px-4 py-2">Clear</a>{% endif %}
+  </form>
+
+  <div class="card overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="border-b border-[#252532]">
+        <tr class="text-[#52526a] text-left">
+          <th class="px-4 py-3">User</th>
+          <th class="px-4 py-3">Email</th>
+          <th class="px-4 py-3">Plan</th>
+          <th class="px-4 py-3">Analyses</th>
+          <th class="px-4 py-3">Joined</th>
+          <th class="px-4 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[#252532]">
+        {% for u in pagination.items %}
+        <tr class="hover:bg-[#252532]/50 transition-colors">
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                {{ u.name[0].upper() }}
+              </div>
+              <div>
+                <div class="font-medium text-[#f1f5f9]">{{ u.name }}</div>
+                {% if u.is_admin %}<span class="text-xs text-amber-400">Admin</span>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-[#52526a]">{{ u.email }}</td>
+          <td class="px-4 py-3"><span class="capitalize text-indigo-400">{{ u.subscription_tier }}</span></td>
+          <td class="px-4 py-3 text-[#f1f5f9]">{{ u.analyses.count() }}</td>
+          <td class="px-4 py-3 text-[#52526a]">{{ u.created_at.strftime('%d %b %Y') }}</td>
+          <td class="px-4 py-3">
+            <div class="flex gap-2">
+              <a href="{{ url_for('admin.edit_user', id=u.id) }}" class="text-indigo-400 text-xs hover:underline">Edit</a>
+              <form method="POST" action="{{ url_for('admin.toggle_admin', id=u.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="text-amber-400 text-xs hover:underline">Toggle Admin</button>
+              </form>
+              <form method="POST" action="{{ url_for('admin.delete_user', id=u.id) }}" class="inline"
+                onsubmit="return confirm('Delete this user and all their analyses?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="text-red-400 text-xs hover:underline">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="flex justify-center gap-2 mt-6">
+    {% for p in pagination.iter_pages() %}
+      {% if p %}
+        <a href="{{ url_for('admin.users', page=p, search=search) }}"
+          class="px-3 py-1.5 rounded-lg text-sm {% if p == pagination.page %}bg-indigo-600 text-white{% else %}bg-[#18181f] border border-[#252532] text-[#f1f5f9]/70{% endif %}">
+          {{ p }}
+        </a>
+      {% else %}<span class="px-2 text-[#52526a]">…</span>{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

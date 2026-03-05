@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}New Analysis — FlipFinder{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-10">
+  <div class="text-center mb-8">
+    <h1 class="font-heading font-bold text-3xl text-gradient mb-2">Analyse a Product</h1>
+    <p class="text-[#52526a]">Upload an image, describe the item, or paste a product URL</p>
+  </div>
+
+  <div class="card p-8">
+    <form method="POST" action="{{ url_for('analysis.submit') }}" enctype="multipart/form-data" id="analysis-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- Image Upload -->
+      <div class="upload-zone mb-6" id="upload-zone">
+        <input type="file" name="image" id="image-input" accept=".jpg,.jpeg,.png,.webp" class="hidden">
+        <div class="upload-zone-content" id="upload-placeholder">
+          <i data-lucide="upload-cloud" class="w-10 h-10 mx-auto mb-3 text-[#52526a]"></i>
+          <p class="text-[#f1f5f9]/70 font-medium mb-1">Drag and drop or click to upload</p>
+          <p class="text-[#52526a] text-sm">JPG, PNG, WebP — max 8MB</p>
+        </div>
+        <div class="upload-zone-content hidden" id="upload-preview">
+          <img id="preview-img" src="" alt="Preview" class="max-h-48 max-w-full mx-auto rounded-lg mb-3">
+          <p id="preview-name" class="text-[#f1f5f9]/70 text-sm font-medium mb-2"></p>
+          <button type="button" id="clear-image" class="text-red-400 text-sm hover:underline">Remove image</button>
+        </div>
+      </div>
+
+      <!-- OR divider -->
+      <div class="flex items-center gap-4 my-6">
+        <div class="flex-1 border-t border-[#252532]"></div>
+        <span class="text-[#52526a] text-sm font-medium">OR</span>
+        <div class="flex-1 border-t border-[#252532]"></div>
+      </div>
+
+      <!-- Text description -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">
+          Describe the product
+          <span class="text-[#52526a] font-normal ml-1">(<span id="char-count">0</span> / 2000)</span>
+        </label>
+        <textarea name="description" id="description" rows="4" maxlength="2000"
+          placeholder="e.g. Vintage Nike Air Max 95 in Neon Yellow, size UK9, worn once, original box included"
+          class="input-field w-full resize-none"></textarea>
+      </div>
+
+      <!-- OR divider -->
+      <div class="flex items-center gap-4 my-6">
+        <div class="flex-1 border-t border-[#252532]"></div>
+        <span class="text-[#52526a] text-sm font-medium">OR</span>
+        <div class="flex-1 border-t border-[#252532]"></div>
+      </div>
+
+      <!-- Product URL -->
+      <div class="mb-8">
+        <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Product URL</label>
+        <input type="url" name="link" placeholder="https://www.ebay.co.uk/itm/..." class="input-field w-full">
+      </div>
+
+      <button type="submit" id="submit-btn" class="btn-primary w-full py-4 text-base">
+        <i data-lucide="zap" class="w-5 h-5 mr-2 inline"></i>
+        <span id="submit-text">Analyse Product</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const desc = document.getElementById('description');
+  const counter = document.getElementById('char-count');
+  desc.addEventListener('input', () => { counter.textContent = desc.value.length; });
+
+  const zone = document.getElementById('upload-zone');
+  const input = document.getElementById('image-input');
+  const placeholder = document.getElementById('upload-placeholder');
+  const preview = document.getElementById('upload-preview');
+  const previewImg = document.getElementById('preview-img');
+  const previewName = document.getElementById('preview-name');
+  const clearBtn = document.getElementById('clear-image');
+
+  zone.addEventListener('click', (e) => { if (!e.target.closest('#upload-preview')) input.click(); });
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) showPreview(e.dataTransfer.files[0]);
+  });
+
+  input.addEventListener('change', () => { if (input.files[0]) showPreview(input.files[0]); });
+
+  function showPreview(file) {
+    if (file.size > 8 * 1024 * 1024) { alert('File too large. Max 8MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImg.src = e.target.result;
+      previewName.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + 'MB)';
+      placeholder.classList.add('hidden');
+      preview.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    preview.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+    previewImg.src = '';
+  });
+
+  document.getElementById('analysis-form').addEventListener('submit', (e) => {
+    const hasImage = input.files && input.files[0];
+    const hasText = desc.value.trim().length > 0;
+    const hasLink = document.querySelector('input[name="link"]').value.trim().length > 0;
+    if (!hasImage && !hasText && !hasLink) {
+      e.preventDefault();
+      alert('Please provide an image, description, or product URL.');
+      return;
+    }
+    const btn = document.getElementById('submit-btn');
+    document.getElementById('submit-text').textContent = 'Analysing...';
+    btn.disabled = true;
+    btn.classList.add('opacity-70');
+    lucide.createIcons();
+  });
+</script>
+{% endblock %}

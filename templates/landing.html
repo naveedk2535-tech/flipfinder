@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}FlipFinder — Turn Any Product Into Profit{% endblock %}
+{% block content %}
+
+<!-- Hero Section -->
+<section class="relative overflow-hidden grid-bg min-h-screen flex items-center">
+  <!-- Orbs -->
+  <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl animate-pulse"></div>
+  <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl animate-pulse" style="animation-delay:1s"></div>
+
+  <div class="relative max-w-6xl mx-auto px-4 py-24 text-center">
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-sm px-4 py-2 rounded-full mb-8 font-medium">
+      <i data-lucide="cpu" class="w-4 h-4"></i>
+      Powered by 4 AI Agents • Real-time market research
+    </div>
+
+    <!-- Headline -->
+    <h1 class="font-heading font-extrabold text-5xl sm:text-6xl lg:text-7xl text-gradient mb-6 leading-tight">
+      Turn Any Product<br>Into Profit
+    </h1>
+
+    <!-- Subheadline -->
+    <p class="text-xl text-[#f1f5f9]/60 max-w-3xl mx-auto mb-10 leading-relaxed">
+      Upload a photo or describe any item. Our AI researches sold prices, auction results, bidding forums, and finds cheaper sources — delivering exact arbitrage numbers instantly.
+    </p>
+
+    <!-- CTAs -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+      <a href="{{ url_for('auth.signup') }}" class="btn-primary px-8 py-4 text-lg">
+        Start For Free
+        <i data-lucide="arrow-right" class="w-5 h-5 ml-2 inline"></i>
+      </a>
+      <a href="#how-it-works" class="btn-outline px-8 py-4 text-lg">
+        See How It Works
+        <i data-lucide="chevron-down" class="w-5 h-5 ml-2 inline"></i>
+      </a>
+    </div>
+
+    <!-- Floating stat badges -->
+    <div class="flex flex-wrap justify-center gap-3">
+      <div class="stat-badge">📈 180% Avg ROI</div>
+      <div class="stat-badge">🔍 10,000+ Products Analysed</div>
+      <div class="stat-badge">🌍 40+ Countries</div>
+      <div class="stat-badge">🤖 4 AI Agents Working</div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section id="how-it-works" class="py-24 bg-[#111118]">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="text-center mb-16">
+      <h2 class="font-heading font-bold text-3xl sm:text-4xl text-gradient mb-4">How It Works</h2>
+      <p class="text-[#f1f5f9]/60">Four powerful AI agents work together in seconds</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="how-card">
+        <div class="text-4xl mb-4">📷</div>
+        <div class="text-indigo-400 text-xs font-semibold mb-2 uppercase tracking-wider">Step 1</div>
+        <h3 class="font-heading font-bold text-lg mb-2">Upload or Describe</h3>
+        <p class="text-[#f1f5f9]/50 text-sm">Photo, text description, or product URL — we handle it all</p>
+      </div>
+      <div class="how-card">
+        <div class="text-4xl mb-4">🔍</div>
+        <div class="text-indigo-400 text-xs font-semibold mb-2 uppercase tracking-wider">Step 2</div>
+        <h3 class="font-heading font-bold text-lg mb-2">Extract Details</h3>
+        <p class="text-[#f1f5f9]/50 text-sm">AI identifies brand, model, era, condition, style descriptors</p>
+      </div>
+      <div class="how-card">
+        <div class="text-4xl mb-4">💹</div>
+        <div class="text-indigo-400 text-xs font-semibold mb-2 uppercase tracking-wider">Step 3</div>
+        <h3 class="font-heading font-bold text-lg mb-2">Research Markets</h3>
+        <p class="text-[#f1f5f9]/50 text-sm">Searches eBay, Depop, Vinted, StockX, auction houses, bidding forums</p>
+      </div>
+      <div class="how-card">
+        <div class="text-4xl mb-4">📊</div>
+        <div class="text-indigo-400 text-xs font-semibold mb-2 uppercase tracking-wider">Step 4</div>
+        <h3 class="font-heading font-bold text-lg mb-2">Calculate Profit</h3>
+        <p class="text-[#f1f5f9]/50 text-sm">Exact ROI, platform fees, verdict: Strong Flip or Avoid</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Platforms banner -->
+<section class="py-12 border-y border-[#252532] overflow-hidden">
+  <div class="max-w-6xl mx-auto px-4 text-center mb-6">
+    <p class="text-[#52526a] text-sm uppercase tracking-wider font-medium">Platforms We Search</p>
+  </div>
+  <div class="flex flex-wrap justify-center gap-3 px-4">
+    {% for platform in ['eBay', 'Depop', 'Vinted', 'StockX', 'Grailed', "Sotheby's", "Christie's", 'Heritage Auctions', 'Facebook Marketplace', 'ASOS Marketplace', 'Vestiaire', 'Chairish'] %}
+      <span class="bg-[#18181f] border border-[#252532] text-[#f1f5f9]/60 px-4 py-2 rounded-full text-sm">{{ platform }}</span>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Beta Banner -->
+<section class="py-4 bg-emerald-900/30 border-b border-emerald-500/20 text-center">
+  <p class="text-emerald-400 text-sm font-medium">
+    🎉 Beta Launch — All features are completely free. No credit card required.
+  </p>
+</section>
+
+<!-- Pricing -->
+<section class="py-24 bg-[#09090f]">
+  <div class="max-w-5xl mx-auto px-4 text-center">
+    <h2 class="font-heading font-bold text-3xl sm:text-4xl text-gradient mb-4">Simple Pricing</h2>
+    <p class="text-[#f1f5f9]/60 mb-12">Choose the plan that suits your flipping business</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Free -->
+      <div class="pricing-card">
+        <div class="text-[#52526a] text-sm font-medium mb-2">Free</div>
+        <div class="font-heading font-extrabold text-4xl mb-1">£0</div>
+        <div class="text-[#52526a] text-sm mb-6">/month</div>
+        <ul class="space-y-2 text-sm text-[#f1f5f9]/70 mb-8 text-left">
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 3 analyses/month</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Basic results</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> eBay + Depop search</li>
+        </ul>
+        <a href="{{ url_for('auth.signup') }}" class="btn-outline w-full text-center py-2.5">Get Started</a>
+      </div>
+      <!-- Pro -->
+      <div class="pricing-card popular-card relative">
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</div>
+        <div class="text-indigo-400 text-sm font-medium mb-2">Pro</div>
+        <div class="font-heading font-extrabold text-4xl mb-1">£14.99</div>
+        <div class="text-[#52526a] text-sm mb-6">/month</div>
+        <ul class="space-y-2 text-sm text-[#f1f5f9]/70 mb-8 text-left">
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 50 analyses/month</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> All platforms searched</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Auction house results</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Similar item finder</li>
+        </ul>
+        <a href="{{ url_for('auth.signup') }}" class="btn-primary w-full text-center py-2.5">Start Pro</a>
+      </div>
+      <!-- Premium -->
+      <div class="pricing-card">
+        <div class="text-purple-400 text-sm font-medium mb-2">Premium</div>
+        <div class="font-heading font-extrabold text-4xl mb-1">£39.99</div>
+        <div class="text-[#52526a] text-sm mb-6">/month</div>
+        <ul class="space-y-2 text-sm text-[#f1f5f9]/70 mb-8 text-left">
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Unlimited analyses</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Priority processing</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Export to CSV</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> API access</li>
+        </ul>
+        <a href="{{ url_for('auth.signup') }}" class="btn-outline w-full text-center py-2.5">Go Premium</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Banner -->
+<section class="cta-banner py-20 text-center">
+  <h2 class="font-heading font-extrabold text-3xl sm:text-4xl text-white mb-4">Ready to start flipping?</h2>
+  <p class="text-white/70 mb-8 text-lg">Join thousands of resellers using AI to find profitable deals.</p>
+  <a href="{{ url_for('auth.signup') }}" class="bg-white text-indigo-600 font-bold px-8 py-4 rounded-xl hover:bg-white/90 transition-all inline-block text-lg">
+    Create Free Account
+  </a>
+</section>
+
+{% endblock %}
