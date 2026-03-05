@@ -259,6 +259,7 @@
     {% endif %}
 
     {% if sourcing.get("similar_by_style") %}
+    {% set style_names = sourcing.similar_by_style | map(attribute="item") | list %}
     <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mb-3">Similar by Style</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
       {% for item in sourcing.similar_by_style[:4] %}
@@ -272,12 +273,16 @@
       </div>
       {% endfor %}
     </div>
-    {% endif %}
+    {% else %}{% set style_names = [] %}{% endif %}
 
-    {% if sourcing.get("similar_by_color") %}
+    {% set color_unique = [] %}
+    {% for item in sourcing.get("similar_by_color",[]) %}
+      {% if item.get("item","") not in style_names %}{% set _ = color_unique.append(item) %}{% endif %}
+    {% endfor %}
+    {% if color_unique %}
     <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mb-3">Similar by Color</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {% for item in sourcing.similar_by_color[:4] %}
+      {% for item in color_unique[:4] %}
       <div class="bg-[#111118] rounded-xl p-3 text-sm">
         <div class="font-medium text-[#f1f5f9] mb-1">{{ item.get("item","") }}</div>
         <div class="text-[#52526a] text-xs mb-2">{{ item.get("why_similar","") }}</div>

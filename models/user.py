@@ -23,6 +23,7 @@ class User(UserMixin, db.Model):
     stripe_subscription_id = db.Column(db.String(255), nullable=True)
     subscription_status = db.Column(db.String(20), default='active')
     analyses_used_this_month = db.Column(db.Integer, default=0)
+    tokens_used_this_month = db.Column(db.Integer, default=0)
     is_admin = db.Column(db.Boolean, default=False)
     is_active_account = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

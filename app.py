@@ -69,6 +69,25 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        # SQLite migration: add new columns if missing
+        try:
+            from sqlalchemy import text
+            with db.engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN tokens_used_this_month INTEGER DEFAULT 0"))
+                conn.commit()
+        except Exception:
+            pass  # Column already exists
+        # Bootstrap admin from env var
+        admin_email = os.environ.get('BOOTSTRAP_ADMIN_EMAIL', '').strip().lower()
+        if admin_email:
+            try:
+                from models.user import User
+                u = User.query.filter_by(email=admin_email).first()
+                if u and not u.is_admin:
+                    u.is_admin = True
+                    db.session.commit()
+            except Exception:
+                pass
 
     return app
 

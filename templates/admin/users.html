@@ -22,6 +22,7 @@
           <th class="px-4 py-3">Email</th>
           <th class="px-4 py-3">Plan</th>
           <th class="px-4 py-3">Analyses</th>
+          <th class="px-4 py-3">Tokens/mo</th>
           <th class="px-4 py-3">Joined</th>
           <th class="px-4 py-3">Actions</th>
         </tr>
@@ -42,7 +43,8 @@
           </td>
           <td class="px-4 py-3 text-[#52526a]">{{ u.email }}</td>
           <td class="px-4 py-3"><span class="capitalize text-indigo-400">{{ u.subscription_tier }}</span></td>
-          <td class="px-4 py-3 text-[#f1f5f9]">{{ u.analyses.count() }}</td>
+          <td class="px-4 py-3 text-[#f1f5f9]">{{ u.analyses.count() }} <span class="text-[#52526a] text-xs">({{ u.analyses_used_this_month }} this mo)</span></td>
+          <td class="px-4 py-3 text-[#f1f5f9]">{{ "{:,}".format(u.tokens_used_this_month or 0) }}</td>
           <td class="px-4 py-3 text-[#52526a]">{{ u.created_at.strftime('%d %b %Y') }}</td>
           <td class="px-4 py-3">
             <div class="flex gap-2">

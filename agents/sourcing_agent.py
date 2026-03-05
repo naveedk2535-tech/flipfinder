@@ -14,20 +14,27 @@ def find_sourcing_deals(search_query, avg_sold_price, product_info=None):
         product_type = product_info.get('product_type', '')
         target_buy = round(avg_sold_price * 0.45, 2) if avg_sold_price else 0
 
+        target_note = f"under ${target_buy} (45% of avg sell price ${avg_sold_price})" if avg_sold_price else "as cheap as possible"
+
         prompt = f"""Find the cheapest places to BUY this item right now in the USA: "{search_query}"
 Colors: {colors} | Style: {style} | Type: {product_type}
-Target buy price: under ${target_buy} (45% of avg sell price ${avg_sold_price})
+Target buy price: {target_note}
 
-Search these sources:
+Search ALL of these sources for the best prices:
 1. "{search_query} cheap buy now eBay USA"
-2. "{search_query} Poshmark low price buy now"
+2. "{search_query} Poshmark low price"
 3. "{search_query} Mercari cheap USA"
-4. "{search_query} Facebook Marketplace cheap USA"
-5. "{search_query} Depop low price buy now"
+4. "{search_query} Facebook Marketplace cheap"
+5. "{search_query} Depop low price"
 6. "{search_query} OfferUp cheap"
-7. "{colors} {product_type} similar style cheap USA"
-8. "{style} {product_type} auction lot cheap USA"
-9. "similar to {search_query} alternative cheap"
+7. "{search_query} Vinted cheap"
+8. "{search_query} Amazon used cheap"
+9. "{search_query} site:amazon.com"
+10. "{search_query} Target sale"
+11. "{search_query} Walmart clearance cheap"
+12. "{search_query} Costco deal"
+13. "{search_query} thrift store goodwill cheap"
+14. "similar to {search_query} cheap alternative USA"
 
 Return ONLY valid JSON (no markdown, no extra text):
 {{

@@ -7,6 +7,15 @@ from google.genai import types
 
 logger = logging.getLogger(__name__)
 
+
+def _add_tokens(count: int):
+    """Accumulate token usage in Flask request context if available."""
+    try:
+        from flask import g
+        g.tokens_used = getattr(g, 'tokens_used', 0) + count
+    except RuntimeError:
+        pass  # Outside Flask context (e.g. testing)
+
 _gemini_client = None
 _groq_client = None
 
@@ -69,6 +78,12 @@ def _call_gemini(model: str, parts: list, use_search: bool) -> str:
         for part in candidate.content.parts
         if hasattr(part, 'text') and part.text
     ]
+    # Track token usage
+    try:
+        if response.usage_metadata:
+            _add_tokens(response.usage_metadata.total_token_count or 0)
+    except Exception:
+        pass
     return " ".join(text_parts).strip()
 
 
@@ -78,9 +93,13 @@ def _call_groq(prompt_text: str) -> str:
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt_text}],
-        max_tokens=1500,
+        max_tokens=8192,
         temperature=0.2,
     )
+    try:
+        _add_tokens(response.usage.total_tokens or 0)
+    except Exception:
+        pass
     return response.choices[0].message.content.strip()
 
 

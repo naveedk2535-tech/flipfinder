@@ -103,6 +103,8 @@ def submit():
         analysis.arbitrage_result = json.dumps(arbitrage)
         analysis.status = 'complete'
         current_user.analyses_used_this_month += 1
+        from flask import g
+        current_user.tokens_used_this_month = (current_user.tokens_used_this_month or 0) + getattr(g, 'tokens_used', 0)
         db.session.commit()
 
         # Trim history to 10 per user

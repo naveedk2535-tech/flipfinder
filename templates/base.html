@@ -43,15 +43,15 @@
               <a href="{{ url_for('admin.dashboard') }}" class="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-1 rounded-full font-medium">Admin</a>
             {% endif %}
             <!-- User dropdown -->
-            <div class="relative group">
-              <button class="flex items-center gap-2 text-sm text-[#f1f5f9]/70 hover:text-[#f1f5f9] transition-colors">
+            <div class="relative" id="user-dd-wrap">
+              <button id="user-dd-btn" class="flex items-center gap-2 text-sm text-[#f1f5f9]/70 hover:text-[#f1f5f9] transition-colors">
                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
                   {{ current_user.name[0].upper() }}
                 </div>
                 {{ current_user.name.split()[0] }}
                 <i data-lucide="chevron-down" class="w-3 h-3"></i>
               </button>
-              <div class="absolute right-0 mt-2 w-48 bg-[#18181f] border border-[#252532] rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+              <div id="user-dd-menu" class="hidden absolute right-0 mt-2 w-48 bg-[#18181f] border border-[#252532] rounded-xl shadow-xl z-50">
                 <a href="{{ url_for('dashboard.profile') }}" class="flex items-center gap-2 px-4 py-3 text-sm text-[#f1f5f9]/70 hover:text-[#f1f5f9] hover:bg-[#252532] rounded-t-xl transition-colors">
                   <i data-lucide="user" class="w-4 h-4"></i> Profile
                 </a>
@@ -100,8 +100,8 @@
     <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[#52526a]">
       <span>© 2025 FlipFinder</span>
       <div class="flex gap-4">
-        <a href="#" class="hover:text-[#f1f5f9] transition-colors">Privacy</a>
-        <a href="#" class="hover:text-[#f1f5f9] transition-colors">Terms</a>
+        <a href="{{ url_for('auth.privacy') }}" class="hover:text-[#f1f5f9] transition-colors">Privacy</a>
+        <a href="{{ url_for('auth.terms') }}" class="hover:text-[#f1f5f9] transition-colors">Terms</a>
         <a href="{{ url_for('billing.pricing') }}" class="hover:text-[#f1f5f9] transition-colors">Pricing</a>
       </div>
     </div>
@@ -118,6 +118,17 @@
         setTimeout(() => el.remove(), 500);
       });
     }, 5000);
+    // User dropdown toggle
+    const ddBtn = document.getElementById('user-dd-btn');
+    const ddMenu = document.getElementById('user-dd-menu');
+    if (ddBtn && ddMenu) {
+      ddBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ddMenu.classList.toggle('hidden');
+      });
+      document.addEventListener('click', () => ddMenu.classList.add('hidden'));
+      ddMenu.addEventListener('click', (e) => e.stopPropagation());
+    }
   </script>
 </body>
 </html>
