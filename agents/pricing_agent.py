@@ -11,6 +11,10 @@ def research_prices(search_query, product_info):
         product_type = product_info.get('product_type', '')
         era = product_info.get('era', '')
         style = ', '.join(product_info.get('style_descriptors', []))
+        condition = product_info.get('condition', '')
+        size = product_info.get('size', '')
+        limited = product_info.get('limited_edition', False)
+        limited_note = " This is a LIMITED EDITION / collab / sold-out release — prices are typically 2-5x retail and highly volatile." if limited else ""
 
         is_luxury = brand.lower() in [
             'balenciaga', 'gucci', 'louis vuitton', 'chanel', 'hermes', 'hermès',
@@ -20,19 +24,22 @@ def research_prices(search_query, product_info):
         ]
         luxury_note = "This is a LUXURY brand — check Vestiaire Collective, Fashionphile, Rebag, 1stDibs for realistic resale prices (typically $300–$5000+). Use ONLY completed/sold prices." if is_luxury else ""
 
+        size_note = f" | Size: {size}" if size else ""
+        condition_note = f" | Condition: {condition}" if condition else ""
         prompt = f"""Research the current US resale market value for: "{search_query}"
-Brand: {brand} | Type: {product_type} | Era: {era} | Style: {style}
-{luxury_note}
+Brand: {brand} | Type: {product_type} | Era: {era} | Style: {style}{size_note}{condition_note}
+{luxury_note}{limited_note}
 
 IMPORTANT: Search ONLY for COMPLETED/SOLD transactions — NOT active listings or asking prices. Listed prices are what sellers hope to get; sold prices are what buyers actually paid. These are very different.
 
 Search these sources for SOLD/completed transaction prices:
 1. "{search_query} sold eBay USA 2024 2025"
-2. "{search_query} sold Poshmark price"
-3. "{search_query} Mercari sold listing"
-4. "{search_query} StockX last sale"
-5. "{search_query} GOAT sold price"
-6. "{search_query} Vestiaire Collective sold"
+2. "{search_query} {condition} sold eBay completed listing"
+3. "{search_query} sold Poshmark price"
+4. "{search_query} Mercari sold listing"
+5. "{search_query} StockX last sale"
+6. "{search_query} GOAT sold price"
+7. "{search_query} Vestiaire Collective sold"
 8. "{search_query} Fashionphile price"
 9. "{search_query} Rebag resale value"
 10. "{search_query} 1stDibs price"

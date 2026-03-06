@@ -84,8 +84,33 @@
       </div>
     </div>
 
+    <!-- After-shipping + break-even summary row -->
+    <div class="mt-5 grid grid-cols-2 gap-3">
+      <div class="bg-[#111118] rounded-xl px-4 py-3 flex items-center justify-between">
+        <div>
+          <div class="text-[#52526a] text-xs">After Shipping</div>
+          <div class="text-xs text-[#52526a]">~${{ "%.0f"|format(arb.get("shipping_cost_est",10)) }} est. cost</div>
+        </div>
+        <div class="text-right">
+          {% set tnp = arb.get("true_net_profit", arb.get("net_profit",0) - arb.get("shipping_cost_est",10)) %}
+          <div class="font-bold text-lg {% if tnp > 0 %}text-emerald-400{% else %}text-red-400{% endif %}">~${{ "%.0f"|format(tnp) }}</div>
+          <div class="text-[#52526a] text-xs">true profit</div>
+        </div>
+      </div>
+      <div class="bg-[#111118] rounded-xl px-4 py-3 flex items-center justify-between">
+        <div>
+          <div class="text-[#52526a] text-xs">Break-Even</div>
+          <div class="text-xs text-[#52526a]">min. to not lose money</div>
+        </div>
+        <div class="text-right">
+          <div class="font-bold text-lg text-amber-400">~${{ "%.0f"|format(arb.get("break_even_price",0)) }}</div>
+          <div class="text-[#52526a] text-xs">calc. est.</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Opportunity score -->
-    <div class="mt-6">
+    <div class="mt-5">
       <div class="flex justify-between text-sm mb-2">
         <span class="text-[#52526a]">Opportunity Score</span>
         <span class="font-bold text-[#f1f5f9]">{{ arb.get("opportunity_score",0) }}/100</span>
@@ -138,7 +163,21 @@
 
   <!-- Product Details -->
   <div class="card p-6 mb-8">
-    <h2 class="font-heading font-bold text-lg mb-5">Product Details</h2>
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-heading font-bold text-lg">Product Details</h2>
+      <div class="flex items-center gap-2">
+        {% if extracted.get("limited_edition") %}
+        <span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold px-2 py-0.5 rounded-full">Limited Edition</span>
+        {% endif %}
+        {% set dl = extracted.get("demand_level","medium") %}
+        <span class="text-xs font-bold px-2 py-0.5 rounded-full
+          {% if dl == 'high' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+          {% elif dl == 'low' %}bg-red-500/20 text-red-400 border border-red-500/30
+          {% else %}bg-[#252532] text-[#52526a] border border-[#252532]{% endif %}">
+          {{ dl | capitalize }} Demand
+        </span>
+      </div>
+    </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
       {% for label, key in [("Brand","brand"),("Type","product_type"),("Model","model"),("Condition","condition"),("Size","size"),("Era","era"),("Materials","materials")] %}
       {% if extracted.get(key) %}
@@ -148,6 +187,15 @@
       </div>
       {% endif %}
       {% endfor %}
+      {% if extracted.get("estimated_retail_price") and extracted.estimated_retail_price > 0 %}
+      <div class="flex flex-col gap-1">
+        <span class="text-[#52526a] text-xs uppercase tracking-wider">Original Retail</span>
+        <span class="text-[#f1f5f9] font-medium">${{ "%.0f"|format(extracted.estimated_retail_price) }}
+          {% set retail_pct = ((arb.get("sell_price",0) / extracted.estimated_retail_price) * 100) | int if extracted.estimated_retail_price > 0 else 0 %}
+          {% if retail_pct > 0 %}<span class="text-xs {% if retail_pct > 100 %}text-emerald-400{% else %}text-amber-400{% endif %} ml-1">({{ retail_pct }}% of retail)</span>{% endif %}
+        </span>
+      </div>
+      {% endif %}
     </div>
     {% if extracted.get("colors") %}
     <div class="mt-4">
@@ -432,6 +480,26 @@
       </div>
       {% endfor %}
     </div>
+  </div>
+  {% endif %}
+
+  <!-- Listing Tips -->
+  {% if arb.get("listing_tips") %}
+  <div class="card p-6 mb-8" style="border-color: rgba(99,102,241,0.25);">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="lightbulb" class="w-4 h-4 text-indigo-400"></i>
+      </div>
+      <h2 class="font-heading font-bold text-lg">How to List This Item</h2>
+    </div>
+    <ul class="space-y-2">
+      {% for tip in arb.listing_tips %}
+      <li class="flex items-start gap-2 text-sm text-[#f1f5f9]/80">
+        <span class="text-indigo-400 font-bold mt-0.5 flex-shrink-0">›</span>
+        <span>{{ tip }}</span>
+      </li>
+      {% endfor %}
+    </ul>
   </div>
   {% endif %}
 

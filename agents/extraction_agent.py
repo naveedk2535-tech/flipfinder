@@ -32,8 +32,17 @@ Return ONLY a valid JSON object with these exact keys (no markdown, no extra tex
   "notable_features": "",
   "style_descriptors": [],
   "auction_relevance": "",
+  "estimated_retail_price": 0,
+  "demand_level": "medium",
+  "limited_edition": false,
   "search_query": ""
-}"""
+}
+
+Notes on new fields:
+- estimated_retail_price: original MSRP/retail price in USD when the item was new. Use 0 if unknown or if this is a vintage/no-longer-sold item.
+- demand_level: "high" (hyped/collectible/waitlisted), "medium" (popular but available), or "low" (niche/slow-moving).
+- limited_edition: true if this is a collab, limited drop, numbered edition, or sold-out release; false otherwise.
+- search_query: make this specific — include brand, model, key variant/colorway, and condition if relevant (e.g. "Nike Air Jordan 1 Retro High OG University Blue size 10 used")."""
 
         if text_input and not image_base64:
             prompt = f'Product description: {text_input}\n\n' + prompt
@@ -44,7 +53,7 @@ Return ONLY a valid JSON object with these exact keys (no markdown, no extra tex
             image_media_type=image_media_type,
             use_search=bool(link),
             max_tokens=1000,
-            fast=not bool(image_base64)  # full flash for images, lite for text/link
+            fast=False  # always use full flash — extraction quality is the foundation of all downstream agents
         )
 
         result = parse_first_json(raw)
@@ -67,5 +76,8 @@ Return ONLY a valid JSON object with these exact keys (no markdown, no extra tex
         "notable_features": "",
         "style_descriptors": [],
         "auction_relevance": "",
+        "estimated_retail_price": 0,
+        "demand_level": "medium",
+        "limited_edition": False,
         "search_query": fallback_query
     }
