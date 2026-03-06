@@ -17,15 +17,16 @@
             <th class="px-4 py-3 font-medium">Status</th>
             <th class="px-4 py-3 font-medium">ROI</th>
             <th class="px-4 py-3 font-medium">Date</th>
+            <th class="px-4 py-3 font-medium"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[#252532]">
           {% for a in pagination.items %}
-          <tr class="hover:bg-[#252532]/50 transition-colors cursor-pointer" onclick="window.location='{{ url_for('analysis.results', id=a.id) }}'">
-            <td class="px-4 py-3 font-medium text-[#f1f5f9] max-w-xs truncate">{{ a.get_product_summary() }}</td>
-            <td class="px-4 py-3 text-[#52526a] capitalize">{{ a.input_type }}</td>
-            <td class="px-4 py-3"><span class="status-badge status-{{ a.status }}">{{ a.status }}</span></td>
-            <td class="px-4 py-3">
+          <tr class="hover:bg-[#252532]/50 transition-colors">
+            <td class="px-4 py-3 font-medium text-[#f1f5f9] max-w-xs truncate cursor-pointer" onclick="window.location='{{ url_for('analysis.results', id=a.id) }}'">{{ a.get_product_summary() }}</td>
+            <td class="px-4 py-3 text-[#52526a] capitalize cursor-pointer" onclick="window.location='{{ url_for('analysis.results', id=a.id) }}'">{{ a.input_type }}</td>
+            <td class="px-4 py-3 cursor-pointer" onclick="window.location='{{ url_for('analysis.results', id=a.id) }}'"><span class="status-badge status-{{ a.status }}">{{ a.status }}</span></td>
+            <td class="px-4 py-3 cursor-pointer" onclick="window.location='{{ url_for('analysis.results', id=a.id) }}'">
               {% if a.status == 'complete' %}
                 {% set roi = a.get_roi_value() %}
                 <span class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %}">
@@ -33,7 +34,18 @@
                 </span>
               {% else %}—{% endif %}
             </td>
-            <td class="px-4 py-3 text-[#52526a]">{{ a.created_at.strftime('%d %b %Y') }}</td>
+            <td class="px-4 py-3 text-[#52526a] cursor-pointer" onclick="window.location='{{ url_for('analysis.results', id=a.id) }}'">{{ a.created_at.strftime('%d %b %Y') }}</td>
+            <td class="px-4 py-3">
+              <form method="POST" action="{{ url_for('dashboard.delete_analysis', id=a.id) }}"
+                    onsubmit="return confirm('Delete this analysis?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ url_for('dashboard.history', page=pagination.page) }}">
+                <button type="submit" title="Delete"
+                  class="w-7 h-7 flex items-center justify-center rounded-lg text-[#52526a] hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </form>
+            </td>
           </tr>
           {% endfor %}
         </tbody>

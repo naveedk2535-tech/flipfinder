@@ -1,6 +1,5 @@
-import json
 import logging
-from agents.base import run_with_search
+from agents.base import run_with_search, parse_first_json
 
 logger = logging.getLogger(__name__)
 
@@ -43,13 +42,14 @@ Return ONLY a valid JSON object with these exact keys (no markdown, no extra tex
             prompt=prompt,
             image_base64=image_base64,
             image_media_type=image_media_type,
-            use_search=bool(link)
+            use_search=bool(link),
+            max_tokens=1000,
+            fast=not bool(image_base64)  # full flash for images, lite for text/link
         )
 
-        start = raw.find('{')
-        end = raw.rfind('}') + 1
-        if start >= 0 and end > start:
-            return json.loads(raw[start:end])
+        result = parse_first_json(raw)
+        if result:
+            return result
 
     except Exception as e:
         logger.error(f"Extraction agent error: {e}")

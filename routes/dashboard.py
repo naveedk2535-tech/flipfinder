@@ -37,6 +37,19 @@ def history():
     return render_template('dashboard/history.html', pagination=pagination)
 
 
+@dashboard_bp.route('/dashboard/analysis/<int:id>/delete', methods=['POST'])
+@login_required
+def delete_analysis(id):
+    analysis = Analysis.query.get_or_404(id)
+    if analysis.user_id != current_user.id:
+        flash('Access denied.', 'danger')
+    else:
+        db.session.delete(analysis)
+        db.session.commit()
+    next_url = request.form.get('next', url_for('dashboard.home'))
+    return redirect(next_url)
+
+
 @dashboard_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():

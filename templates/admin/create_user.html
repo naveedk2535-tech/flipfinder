@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Create User — Admin{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-10">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-heading font-bold text-2xl text-gradient">Create New User</h1>
+    <a href="{{ url_for('admin.users') }}" class="text-sm text-indigo-400 hover:underline">← Users</a>
+  </div>
+
+  <div class="card p-8">
+    <form method="POST" action="{{ url_for('admin.create_user') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Name <span class="text-red-400">*</span></label>
+          <input type="text" name="name" required class="input-field w-full" placeholder="Full name">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Email <span class="text-red-400">*</span></label>
+          <input type="email" name="email" required class="input-field w-full" placeholder="user@example.com">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Password <span class="text-red-400">*</span></label>
+          <input type="password" name="password" required class="input-field w-full" placeholder="Min 8 characters">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Subscription Tier</label>
+          <select name="subscription_tier" class="input-field w-full">
+            {% for tier in ['free','pro','premium'] %}
+            <option value="{{ tier }}">{{ tier | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Subscription Status</label>
+          <select name="subscription_status" class="input-field w-full">
+            {% for s in ['active','cancelled','trial'] %}
+            <option value="{{ s }}">{{ s | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="is_admin">
+            <span class="text-sm text-[#f1f5f9]/70">Grant Admin Access</span>
+          </label>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="submit" class="btn-primary flex-1 py-3">Create User</button>
+          <a href="{{ url_for('admin.users') }}" class="btn-outline flex-1 py-3 text-center">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

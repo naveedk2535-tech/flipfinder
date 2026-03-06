@@ -43,6 +43,16 @@
             {% endfor %}
           </select>
         </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Analyses Used This Month</label>
+            <input type="number" name="analyses_used_this_month" value="{{ user.analyses_used_this_month or 0 }}" min="0" class="input-field w-full">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Tokens Used This Month</label>
+            <input type="number" name="tokens_used_this_month" value="{{ user.tokens_used_this_month or 0 }}" min="0" class="input-field w-full">
+          </div>
+        </div>
         <div class="flex gap-6">
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" name="is_admin" {% if user.is_admin %}checked{% endif %}>

@@ -4,7 +4,10 @@
 <div class="max-w-7xl mx-auto px-4 py-10">
   <div class="flex items-center justify-between mb-6">
     <h1 class="font-heading font-bold text-2xl text-gradient">Users</h1>
-    <a href="{{ url_for('admin.dashboard') }}" class="text-sm text-indigo-400 hover:underline">← Dashboard</a>
+    <div class="flex gap-3 items-center">
+      <a href="{{ url_for('admin.create_user') }}" class="btn-primary px-4 py-2 text-sm">+ New User</a>
+      <a href="{{ url_for('admin.dashboard') }}" class="text-sm text-indigo-400 hover:underline">← Dashboard</a>
+    </div>
   </div>
 
   <form method="GET" class="mb-6 flex gap-3">

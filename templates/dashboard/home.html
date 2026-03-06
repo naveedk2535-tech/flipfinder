@@ -42,29 +42,40 @@
     {% if recent %}
       <div class="space-y-3">
         {% for a in recent %}
-        <a href="{{ url_for('analysis.results', id=a.id) }}" class="flex items-center gap-4 p-4 bg-[#111118] hover:bg-[#252532] rounded-xl transition-colors group">
-          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
-            {% if a.status == 'complete' %}bg-emerald-500/20{% elif a.status == 'error' %}bg-red-500/20{% else %}bg-amber-500/20{% endif %}">
-            {% if a.status == 'complete' %}<i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i>
-            {% elif a.status == 'error' %}<i data-lucide="alert-circle" class="w-5 h-5 text-red-400"></i>
-            {% else %}<i data-lucide="loader" class="w-5 h-5 text-amber-400"></i>{% endif %}
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-medium text-[#f1f5f9] truncate">{{ a.get_product_summary() }}</div>
-            <div class="text-[#52526a] text-xs mt-0.5">{{ a.created_at.strftime('%d %b %Y, %H:%M') }}</div>
-          </div>
-          {% if a.status == 'complete' %}
-            {% set roi = a.get_roi_value() %}
-            <div class="text-right flex-shrink-0">
-              <div class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %}">
-                {{ "%.0f"|format(roi) }}% ROI
-              </div>
-              <div class="text-xs text-[#52526a]">{{ a.get_arbitrage().get('verdict', '') }}</div>
+        <div class="flex items-center gap-4 p-4 bg-[#111118] hover:bg-[#252532] rounded-xl transition-colors group relative">
+          <a href="{{ url_for('analysis.results', id=a.id) }}" class="flex items-center gap-4 flex-1 min-w-0">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
+              {% if a.status == 'complete' %}bg-emerald-500/20{% elif a.status == 'error' %}bg-red-500/20{% else %}bg-amber-500/20{% endif %}">
+              {% if a.status == 'complete' %}<i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i>
+              {% elif a.status == 'error' %}<i data-lucide="alert-circle" class="w-5 h-5 text-red-400"></i>
+              {% else %}<i data-lucide="loader" class="w-5 h-5 text-amber-400"></i>{% endif %}
             </div>
-          {% else %}
-            <span class="status-badge status-{{ a.status }}">{{ a.status | capitalize }}</span>
-          {% endif %}
-        </a>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-[#f1f5f9] truncate">{{ a.get_product_summary() }}</div>
+              <div class="text-[#52526a] text-xs mt-0.5">{{ a.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+            </div>
+            {% if a.status == 'complete' %}
+              {% set roi = a.get_roi_value() %}
+              <div class="text-right flex-shrink-0 mr-3">
+                <div class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %}">
+                  {{ "%.0f"|format(roi) }}% ROI
+                </div>
+                <div class="text-xs text-[#52526a]">{{ a.get_arbitrage().get('verdict', '') }}</div>
+              </div>
+            {% else %}
+              <span class="status-badge status-{{ a.status }} mr-3">{{ a.status | capitalize }}</span>
+            {% endif %}
+          </a>
+          <form method="POST" action="{{ url_for('dashboard.delete_analysis', id=a.id) }}"
+                onsubmit="return confirm('Delete this analysis?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ url_for('dashboard.home') }}">
+            <button type="submit" title="Delete"
+              class="w-7 h-7 flex items-center justify-center rounded-lg text-[#52526a] hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </form>
+        </div>
         {% endfor %}
       </div>
     {% else %}

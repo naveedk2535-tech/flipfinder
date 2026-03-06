@@ -50,9 +50,10 @@
     <div class="flex flex-col lg:flex-row lg:items-center gap-8">
       <div class="text-center lg:text-left">
         <div class="text-[#52526a] text-sm font-medium mb-1">Return on Investment</div>
-        <div class="font-heading font-extrabold text-7xl {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %} mb-2">
-          {{ "%.0f"|format(roi) }}%
+        <div class="font-heading font-extrabold text-7xl {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %} mb-1">
+          ~{{ "%.0f"|format(roi) }}%
         </div>
+        <div class="text-[#52526a] text-xs mb-2">calc. est.</div>
         <div class="verdict-badge verdict-{{ arb.get("verdict","avoid").lower().replace(" ","_") }} inline-block mb-4">
           {{ arb.get("verdict", "—") }}
         </div>
@@ -61,17 +62,20 @@
       <div class="flex-1 grid grid-cols-2 gap-4">
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Buy At</div>
-          <div class="font-heading font-bold text-xl text-[#f1f5f9]">${{ "%.2f"|format(arb.get("buy_price",0)) }}</div>
+          <div class="font-heading font-bold text-xl text-[#f1f5f9]">~${{ "%.2f"|format(arb.get("buy_price",0)) }}</div>
+          <div class="text-[#52526a] text-xs mt-0.5">calc. est.</div>
         </div>
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Sell At</div>
-          <div class="font-heading font-bold text-xl text-[#f1f5f9]">${{ "%.2f"|format(arb.get("sell_price",0)) }}</div>
+          <div class="font-heading font-bold text-xl text-[#f1f5f9]">~${{ "%.2f"|format(arb.get("sell_price",0)) }}</div>
+          <div class="text-[#52526a] text-xs mt-0.5">calc. est.</div>
         </div>
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Net Profit</div>
           <div class="font-heading font-bold text-xl {% if arb.get("net_profit",0) > 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
-            ${{ "%.2f"|format(arb.get("net_profit",0)) }}
+            ~${{ "%.2f"|format(arb.get("net_profit",0)) }}
           </div>
+          <div class="text-[#52526a] text-xs mt-0.5">calc. est.</div>
         </div>
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Best Platform</div>
@@ -184,28 +188,49 @@
     <div class="grid grid-cols-3 gap-4 mb-6">
       <div class="text-center">
         <div class="text-[#52526a] text-xs mb-1">Min Sold</div>
-        <div class="font-bold text-xl text-[#f1f5f9]">${{ "%.0f"|format(min_p) }}</div>
+        <div class="font-bold text-xl text-[#f1f5f9]">~${{ "%.0f"|format(min_p) }}</div>
+        <div class="text-[#52526a] text-xs mt-0.5">calc. est.</div>
       </div>
       <div class="text-center">
         <div class="text-[#52526a] text-xs mb-1">Avg Sold</div>
-        <div class="font-bold text-xl text-indigo-400">${{ "%.0f"|format(avg_p) }}</div>
+        <div class="font-bold text-xl text-indigo-400">~${{ "%.0f"|format(avg_p) }}</div>
+        <div class="text-[#52526a] text-xs mt-0.5">calc. est.</div>
       </div>
       <div class="text-center">
         <div class="text-[#52526a] text-xs mb-1">Max Sold</div>
-        <div class="font-bold text-xl text-[#f1f5f9]">${{ "%.0f"|format(max_p) }}</div>
+        <div class="font-bold text-xl text-[#f1f5f9]">~${{ "%.0f"|format(max_p) }}</div>
+        <div class="text-[#52526a] text-xs mt-0.5">calc. est.</div>
       </div>
     </div>
     <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 text-center mb-6">
       <div class="text-[#52526a] text-xs mb-1">Recommended Sell Price</div>
-      <div class="font-heading font-extrabold text-3xl text-indigo-400">${{ "%.2f"|format(pricing.get("recommended_sell_price",0)) }}</div>
+      <div class="font-heading font-extrabold text-3xl text-indigo-400">~${{ "%.2f"|format(pricing.get("recommended_sell_price",0)) }}</div>
+      <div class="text-[#52526a] text-xs mt-1">calc. est.</div>
     </div>
     {% if pricing.get("market_notes") %}
     <p class="text-[#f1f5f9]/60 text-sm mb-4">{{ pricing.market_notes }}</p>
     {% endif %}
     {% if pricing.get("sources") %}
+    {% set sold_search_urls = {
+      "ebay":                 "https://www.ebay.com/sch/i.html?_nkw=",
+      "poshmark":             "https://poshmark.com/search?query=",
+      "mercari":              "https://www.mercari.com/search/?keyword=",
+      "stockx":               "https://stockx.com/search?s=",
+      "goat":                 "https://www.goat.com/search?query=",
+      "vestiaire collective": "https://www.vestiairecollective.com/search/?q=",
+      "vestiaire":            "https://www.vestiairecollective.com/search/?q=",
+      "fashionphile":         "https://www.fashionphile.com/shop?search=",
+      "rebag":                "https://www.rebag.com/shop?q=",
+      "1stdibs":              "https://www.1stdibs.com/search/?q=",
+      "depop":                "https://www.depop.com/search/?q=",
+      "amazon":               "https://www.amazon.com/s?k="
+    } %}
     <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mb-3">Sold Listings</h3>
     <div class="space-y-2">
       {% for s in pricing.sources[:6] %}
+      {% set sold_platform = s.get("platform","") | lower %}
+      {% set sold_search_base = sold_search_urls.get(sold_platform, "https://www.ebay.com/sch/i.html?_nkw=") %}
+      {% set sold_url = sold_search_base + ((s.get("title","") or extracted.get("search_query","")) | urlencode) %}
       <div class="flex items-center justify-between bg-[#111118] rounded-lg px-4 py-2.5 text-sm">
         <div class="flex-1 min-w-0">
           <div class="font-medium text-[#f1f5f9] truncate">{{ s.get("title","—") }}</div>
@@ -213,7 +238,7 @@
         </div>
         <div class="flex items-center gap-3 flex-shrink-0 ml-3">
           <span class="font-bold text-emerald-400">${{ "%.0f"|format(s.get("price",0)) }}</span>
-          {% if s.get("url") %}<a href="{{ s.url }}" target="_blank" class="text-indigo-400 text-xs hover:underline">View</a>{% endif %}
+          <a href="{{ sold_url }}" target="_blank" class="text-indigo-400 text-xs hover:underline">Search</a>
         </div>
       </div>
       {% endfor %}
@@ -233,42 +258,98 @@
       {% endfor %}
     </div>
     {% endif %}
+
+    <!-- Live Search Links -->
+    {% set q = (extracted.get("search_query") or analysis.raw_input) | urlencode %}
+    <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mt-5 mb-3">Search Live on Platforms</h3>
+    <div class="flex flex-wrap gap-2">
+      <a href="https://www.ebay.com/sch/i.html?_nkw={{ q }}&LH_Sold=1&LH_Complete=1" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">eBay Sold</a>
+      <a href="https://poshmark.com/search?query={{ q }}&availability=sold_out" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">Poshmark</a>
+      <a href="https://www.mercari.com/search/?keyword={{ q }}" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">Mercari</a>
+      <a href="https://www.goat.com/search?query={{ q }}" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">GOAT</a>
+      <a href="https://stockx.com/search?s={{ q }}" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">StockX</a>
+      <a href="https://www.depop.com/search/?q={{ q }}" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">Depop</a>
+      <a href="https://www.vestiairecollective.com/search/?q={{ q }}" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">Vestiaire</a>
+    </div>
   </div>
 
   <!-- Sourcing Deals -->
   <div class="card p-6 mb-8">
     <h2 class="font-heading font-bold text-lg mb-5">Sourcing Deals</h2>
     {% if sourcing.get("best_deals") %}
+    {% set platform_search_urls = {
+      "ebay":               "https://www.ebay.com/sch/i.html?_nkw=",
+      "poshmark":           "https://poshmark.com/search?query=",
+      "mercari":            "https://www.mercari.com/search/?keyword=",
+      "depop":              "https://www.depop.com/search/?q=",
+      "stockx":             "https://stockx.com/search?s=",
+      "goat":               "https://www.goat.com/search?query=",
+      "facebook marketplace": "https://www.facebook.com/marketplace/search/?query=",
+      "offerup":            "https://offerup.com/search/?q=",
+      "amazon":             "https://www.amazon.com/s?k=",
+      "farfetch":           "https://www.google.com/search?q=farfetch+",
+      "vestiaire":          "https://www.vestiairecollective.com/search/?q=",
+      "fashionphile":       "https://www.fashionphile.com/shop?search=",
+      "rebag":              "https://www.rebag.com/shop?q=",
+      "1stdibs":            "https://www.1stdibs.com/search/?q="
+    } %}
     <div class="space-y-3 mb-6">
       {% for d in sourcing.best_deals[:5] %}
+      {% set platform_key = d.get("platform","") | lower %}
+      {% set search_base = platform_search_urls.get(platform_key, "https://www.ebay.com/sch/i.html?_nkw=") %}
+      {% set deal_url = search_base + ((d.get("title","") or extracted.get("search_query","")) | urlencode) %}
       <div class="flex items-center justify-between bg-[#111118] rounded-xl px-4 py-3 text-sm">
         <div class="flex-1 min-w-0">
           <div class="font-medium text-[#f1f5f9] truncate">{{ d.get("title","—") }}</div>
           <div class="text-[#52526a] text-xs">{{ d.get("platform","") }} — {{ d.get("condition","") }}</div>
         </div>
         <div class="flex items-center gap-3 flex-shrink-0 ml-3">
-          <span class="font-bold text-emerald-400">${{ "%.2f"|format(d.get("price",0)) }}</span>
-          {% if d.get("buy_link") or d.get("url") %}
-          <a href="{{ d.get("buy_link") or d.get("url") }}" target="_blank"
+          <div class="text-right">
+            <div class="font-bold text-emerald-400">~${{ "%.0f"|format(d.get("price",0)) }}</div>
+            <div class="text-[#52526a] text-xs">est. price</div>
+          </div>
+          <a href="{{ deal_url }}" target="_blank"
             class="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-500 transition-colors">Buy Now</a>
-          {% endif %}
         </div>
       </div>
       {% endfor %}
     </div>
     {% endif %}
 
+    {% set similar_search_urls = {
+      "goat":        "https://www.goat.com/search?query=",
+      "stockx":      "https://stockx.com/search?s=",
+      "ebay":        "https://www.ebay.com/sch/i.html?_nkw=",
+      "depop":       "https://www.depop.com/search/?q=",
+      "poshmark":    "https://poshmark.com/search?query=",
+      "vestiaire":   "https://www.vestiairecollective.com/search/?q=",
+      "farfetch":    "https://www.google.com/search?q=farfetch+",
+      "editorialist":"https://editorialist.com/search/?q=",
+      "fashionphile":"https://www.fashionphile.com/shop?search=",
+      "rebag":       "https://www.rebag.com/shop?q=",
+      "1stdibs":     "https://www.1stdibs.com/search/?q="
+    } %}
     {% if sourcing.get("similar_by_style") %}
     {% set style_names = sourcing.similar_by_style | map(attribute="item") | list %}
     <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mb-3">Similar by Style</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
       {% for item in sourcing.similar_by_style[:4] %}
+      {% set sim_platform = item.get("platform","") | lower %}
+      {% set sim_search_base = similar_search_urls.get(sim_platform, "https://www.google.com/search?q=") %}
+      {% set sim_url = sim_search_base + (item.get("item","") | urlencode) %}
       <div class="bg-[#111118] rounded-xl p-3 text-sm">
         <div class="font-medium text-[#f1f5f9] mb-1">{{ item.get("item","") }}</div>
         <div class="text-[#52526a] text-xs mb-2">{{ item.get("why_similar","") }}</div>
         <div class="flex justify-between items-center">
-          <span class="text-indigo-400 font-bold">${{ "%.2f"|format(item.get("price",0)) }}</span>
-          <span class="text-[#52526a] text-xs">{{ item.get("platform","") }}</span>
+          <span class="text-indigo-400 font-bold">${{ "%.0f"|format(item.get("price",0)) }}</span>
+          <a href="{{ sim_url }}" target="_blank" class="text-xs text-indigo-400 hover:underline">{{ item.get("platform","Search") }}</a>
         </div>
       </div>
       {% endfor %}
@@ -283,12 +364,15 @@
     <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mb-3">Similar by Color</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {% for item in color_unique[:4] %}
+      {% set sim_platform = item.get("platform","") | lower %}
+      {% set sim_search_base = similar_search_urls.get(sim_platform, "https://www.google.com/search?q=") %}
+      {% set sim_url = sim_search_base + (item.get("item","") | urlencode) %}
       <div class="bg-[#111118] rounded-xl p-3 text-sm">
         <div class="font-medium text-[#f1f5f9] mb-1">{{ item.get("item","") }}</div>
         <div class="text-[#52526a] text-xs mb-2">{{ item.get("why_similar","") }}</div>
         <div class="flex justify-between items-center">
-          <span class="text-indigo-400 font-bold">${{ "%.2f"|format(item.get("price",0)) }}</span>
-          <span class="text-[#52526a] text-xs">{{ item.get("platform","") }}</span>
+          <span class="text-indigo-400 font-bold">${{ "%.0f"|format(item.get("price",0)) }}</span>
+          <a href="{{ sim_url }}" target="_blank" class="text-xs text-indigo-400 hover:underline">{{ item.get("platform","Search") }}</a>
         </div>
       </div>
       {% endfor %}
@@ -299,6 +383,57 @@
     <p class="text-[#f1f5f9]/50 text-sm mt-4">{{ sourcing.sourcing_notes }}</p>
     {% endif %}
   </div>
+
+  <!-- Budget-Friendly Alternatives -->
+  {% if sourcing.get("budget_alternatives") %}
+  <div class="card p-6 mb-8" style="border-color: rgba(34,197,94,0.25);">
+    <div class="flex items-center gap-3 mb-5">
+      <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="font-heading font-bold text-lg">Budget-Friendly Alternatives</h2>
+        <p class="text-[#52526a] text-xs">Similar look & feel — available at mass-market stores</p>
+      </div>
+    </div>
+    {# Store search URL map — fallback when AI doesn't return a real URL #}
+    {% set store_urls = {
+      "walmart":    "https://www.walmart.com/search?q=",
+      "amazon":     "https://www.amazon.com/s?k=",
+      "target":     "https://www.target.com/s?searchTerm=",
+      "shein":      "https://www.google.com/search?q=shein+",
+      "zara":       "https://www.zara.com/us/en/search?searchTerm=",
+      "h&m":        "https://www2.hm.com/en_us/search-results.html?q=",
+      "asos":       "https://www.asos.com/us/search/?q=",
+      "tj maxx":    "https://www.tjmaxx.tjx.com/store/jump/topic/search-results/70001?searchString=",
+      "burlington": "https://www.burlington.com/search/results?text=",
+      "costco":     "https://www.costco.com/CatalogSearch?dept=All&keyword="
+    } %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {% for item in sourcing.budget_alternatives[:6] %}
+      {% set store_key = item.get("store","") | lower %}
+      {% set base_search = store_urls.get(store_key, "https://www.google.com/search?q=" + store_key + "+") %}
+      {% set shop_url = base_search + (item.get("item","") | urlencode) %}
+      <div class="bg-[#111118] border border-emerald-500/10 rounded-xl p-4 text-sm">
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <div class="font-medium text-[#f1f5f9] leading-snug">{{ item.get("item","") }}</div>
+          <span class="bg-emerald-500/20 text-emerald-400 text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">{{ item.get("store","") }}</span>
+        </div>
+        <p class="text-[#52526a] text-xs mb-3 leading-relaxed">{{ item.get("why_similar","") }}</p>
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-emerald-400 text-base">${{ "%.0f"|format(item.get("price",0)) }}</span>
+          <a href="{{ shop_url }}" target="_blank"
+            class="bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs px-3 py-1.5 rounded-lg hover:bg-emerald-600/40 transition-colors">
+            Shop Now
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Actions -->
   <div class="flex gap-3">

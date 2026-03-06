@@ -1,11 +1,34 @@
 import os
 import io
+import json
 import base64
 import logging
 from google import genai
 from google.genai import types
 
 logger = logging.getLogger(__name__)
+
+
+def parse_first_json(raw: str):
+    """
+    Extract and parse the first complete JSON object from a raw string.
+    Handles cases where the AI wraps JSON in markdown fences or appends extra text.
+    """
+    start = raw.find('{')
+    if start < 0:
+        return None
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(raw, start)
+        return obj
+    except json.JSONDecodeError:
+        # Fallback: try trimming end until valid
+        end = raw.rfind('}')
+        while end > start:
+            try:
+                return json.loads(raw[start:end + 1])
+            except json.JSONDecodeError:
+                end = raw.rfind('}', start, end)
+        return None
 
 
 def _add_tokens(count: int):
@@ -20,7 +43,10 @@ _gemini_client = None
 _groq_client = None
 
 # Model preference order — best first
-GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"]
+# gemini-1.5-flash is deprecated (404) — replaced with gemini-2.0-flash-lite
+GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
+# Lighter chain for simple tasks (extraction, arbitrage) — skips full flash to save quota
+GEMINI_FAST_MODELS = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
 
 
 def _get_gemini_client():
@@ -62,9 +88,9 @@ def _search_tool_for(model: str):
         return types.Tool(google_search=types.GoogleSearch())
 
 
-def _call_gemini(model: str, parts: list, use_search: bool) -> str:
+def _call_gemini(model: str, parts: list, use_search: bool, max_tokens: int = 8192) -> str:
     client = _get_gemini_client()
-    config_kwargs = {"max_output_tokens": 8192, "temperature": 0.2}
+    config_kwargs = {"max_output_tokens": max_tokens, "temperature": 0.2}
     if use_search:
         config_kwargs["tools"] = [_search_tool_for(model)]
 
@@ -104,10 +130,12 @@ def _call_groq(prompt_text: str) -> str:
 
 
 def run_with_search(prompt: str, image_base64: str = None,
-                    image_media_type: str = None, use_search: bool = True) -> str:
+                    image_media_type: str = None, use_search: bool = True,
+                    max_tokens: int = 8192, fast: bool = False) -> str:
     """
-    Fallback chain: gemini-2.5-flash → gemini-2.5-flash-lite → gemini-1.5-flash → Groq
-    Each model uses the correct search tool for its generation.
+    Fallback chain: gemini-2.5-flash → gemini-2.5-flash-lite → gemini-2.0-flash-lite → Groq
+    fast=True skips full flash and starts with flash-lite (for extraction/arbitrage).
+    max_tokens controls per-call output limit.
     """
     parts = []
     if image_base64:
@@ -121,10 +149,11 @@ def run_with_search(prompt: str, image_base64: str = None,
             logger.warning(f"Image decode error: {e}")
     parts.append(types.Part.from_text(text=prompt))
 
-    for model in GEMINI_MODELS:
+    models = GEMINI_FAST_MODELS if fast else GEMINI_MODELS
+    for model in models:
         for attempt_search in ([True, False] if use_search else [False]):
             try:
-                result = _call_gemini(model, parts, attempt_search)
+                result = _call_gemini(model, parts, attempt_search, max_tokens=max_tokens)
                 if result:
                     logger.info(f"Gemini success: {model} (search={attempt_search})")
                     return result

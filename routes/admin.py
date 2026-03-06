@@ -86,6 +86,35 @@ def users():
     return render_template('admin/users.html', pagination=pagination, search=search)
 
 
+@admin_bp.route('/users/new', methods=['GET', 'POST'])
+@admin_required
+def create_user():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '').strip()
+        if not name or not email or not password:
+            flash('Name, email, and password are required.', 'danger')
+            return render_template('admin/create_user.html')
+        if User.query.filter_by(email=email).first():
+            flash('A user with that email already exists.', 'danger')
+            return render_template('admin/create_user.html')
+        user = User(
+            name=name,
+            email=email,
+            subscription_tier=request.form.get('subscription_tier', 'free'),
+            subscription_status=request.form.get('subscription_status', 'active'),
+            is_admin=request.form.get('is_admin') == 'on',
+            is_active_account=True,
+        )
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        flash(f'User {email} created.', 'success')
+        return redirect(url_for('admin.users'))
+    return render_template('admin/create_user.html')
+
+
 @admin_bp.route('/users/<int:id>', methods=['GET', 'POST'])
 @admin_required
 def edit_user(id):
@@ -99,6 +128,11 @@ def edit_user(id):
         user.subscription_status = request.form.get('subscription_status', user.subscription_status)
         user.is_admin = request.form.get('is_admin') == 'on'
         user.is_active_account = request.form.get('is_active_account') == 'on'
+        try:
+            user.analyses_used_this_month = int(request.form.get('analyses_used_this_month', user.analyses_used_this_month or 0))
+            user.tokens_used_this_month = int(request.form.get('tokens_used_this_month', user.tokens_used_this_month or 0))
+        except (ValueError, TypeError):
+            pass
         new_password = request.form.get('new_password', '').strip()
         if new_password:
             user.set_password(new_password)
