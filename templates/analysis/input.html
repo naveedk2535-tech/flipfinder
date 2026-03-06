@@ -26,7 +26,7 @@
             <button type="button" id="clear-image" class="text-red-400 text-sm hover:underline">Remove image</button>
           </div>
         </div>
-        <div class="absolute inset-0 flex items-center justify-center rounded-xl pointer-events-none">
+        <div id="images-coming-soon" class="absolute inset-0 flex items-center justify-center rounded-xl pointer-events-none">
           <div class="bg-[#111118]/90 border border-[#252532] rounded-xl px-6 py-4 text-center shadow-lg">
             <span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs font-bold px-3 py-1 rounded-full">Coming Soon</span>
             <p class="text-[#52526a] text-xs mt-2">Image analysis — launching shortly</p>
@@ -79,7 +79,7 @@
   desc.addEventListener('input', () => { counter.textContent = desc.value.length; });
 
   // ── Image upload — set IMAGES_ENABLED = true to re-activate ────────────
-  const IMAGES_ENABLED = false;
+  const IMAGES_ENABLED = true;
 
   const zone = document.getElementById('upload-zone');
   const input = document.getElementById('image-input');
@@ -92,6 +92,8 @@
   if (IMAGES_ENABLED) {
     input.removeAttribute('disabled');
     zone.classList.remove('opacity-40', 'pointer-events-none', 'select-none');
+    const comingSoon = document.getElementById('images-coming-soon');
+    if (comingSoon) comingSoon.style.display = 'none';
     zone.addEventListener('click', (e) => { if (!e.target.closest('#upload-preview')) input.click(); });
     zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
     zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
