@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Server Error — FlipAFind{% endblock %}
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center px-4">
+  <div class="text-center">
+    <div class="font-heading font-extrabold text-8xl text-gradient mb-4">500</div>
+    <h1 class="font-heading font-bold text-2xl text-[#f1f5f9] mb-3">Something went wrong</h1>
+    <p class="text-[#52526a] mb-2">We hit an unexpected error on our end.</p>
+    <p class="text-[#52526a] text-sm mb-8">If this keeps happening, contact us at <a href="mailto:hello@zzi.ai" class="text-indigo-400 hover:underline">hello@zzi.ai</a>.</p>
+    <div class="flex gap-3 justify-center">
+      <a href="{{ url_for('auth.landing') }}" class="btn-primary px-6 py-2.5">Go Home</a>
+      <a href="{{ url_for('dashboard.home') }}" class="btn-outline px-6 py-2.5">Dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

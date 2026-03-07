@@ -2,11 +2,18 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from urllib.parse import urlparse, urljoin
 from app import db, mail, limiter
 from models.user import User
 from datetime import datetime, timedelta
 
 auth_bp = Blueprint('auth', __name__)
+
+
+def _is_safe_url(target):
+    ref = urlparse(request.host_url)
+    test = urlparse(urljoin(request.host_url, target))
+    return test.scheme in ('http', 'https') and ref.netloc == test.netloc
 
 # ── Token helpers ─────────────────────────────────────────────────────────────
 
@@ -87,6 +94,7 @@ def landing():
 
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
+@limiter.limit("10 per hour", methods=["POST"])
 def signup():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.home'))
@@ -208,12 +216,15 @@ def login():
             login_user(user)
             flash(f'Welcome back, {user.name}!', 'success')
             next_page = request.args.get('next')
+            if next_page and not _is_safe_url(next_page):
+                next_page = None
             return redirect(next_page or url_for('dashboard.home'))
         flash('Invalid username or password.', 'danger')
     return render_template('auth/login.html')
 
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit("5 per hour", methods=["POST"])
 def forgot_password():
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
@@ -271,7 +282,7 @@ def reset_password(token):
     return render_template('auth/reset_password.html', token=token)
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()

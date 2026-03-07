@@ -33,6 +33,7 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
     last_reset_date = db.Column(db.DateTime, default=datetime.utcnow)
+    subscription_trial_end = db.Column(db.DateTime, nullable=True)
 
     analyses = db.relationship('Analysis', backref='user', lazy='dynamic', cascade='all, delete-orphan')
 

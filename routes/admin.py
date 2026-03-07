@@ -59,7 +59,9 @@ def dashboard():
         Analysis.status == 'error'
     ).count()
 
-    est_mrr = active_subs * 14.99
+    pro_count     = User.query.filter_by(subscription_tier='pro',     subscription_status='active').count()
+    premium_count = User.query.filter_by(subscription_tier='premium', subscription_status='active').count()
+    est_mrr = (pro_count * 14.99) + (premium_count * 39.99)
 
     return render_template(
         'admin/dashboard.html',

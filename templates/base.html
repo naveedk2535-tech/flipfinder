@@ -93,9 +93,12 @@
                   <i data-lucide="history" class="w-4 h-4"></i> History
                 </a>
                 <div class="border-t border-[#252532]"></div>
-                <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-2.5 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-[#252532] transition-colors">
-                  <i data-lucide="log-out" class="w-4 h-4"></i> Logout
-                </a>
+                <form method="POST" action="{{ url_for('auth.logout') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="flex items-center gap-2.5 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-[#252532] transition-colors w-full text-left">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+                  </button>
+                </form>
               </div>
             </div>
           {% else %}
@@ -135,9 +138,12 @@
           </a>
           {% endif %}
           <div class="border-t border-[#252532] my-1"></div>
-          <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-[#252532] transition-colors">
-            <i data-lucide="log-out" class="w-4 h-4"></i> Logout
-          </a>
+          <form method="POST" action="{{ url_for('auth.logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-[#252532] transition-colors w-full text-left">
+              <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+            </button>
+          </form>
         {% else %}
           <a href="{{ url_for('auth.login') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-[#f1f5f9]/70 hover:text-[#f1f5f9] hover:bg-[#252532] transition-colors">
             <i data-lucide="log-in" class="w-4 h-4"></i> Login

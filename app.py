@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
@@ -54,12 +54,50 @@ def create_app():
     mail.init_app(app)
     limiter.init_app(app)
 
+    # ── Security headers ────────────────────────────────────────────────────
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        return response
+
+    # ── HTTPS redirect (PythonAnywhere proxy sets X-Forwarded-Proto) ────────
+    @app.before_request
+    def redirect_to_https():
+        proto = request.headers.get('X-Forwarded-Proto', 'https')
+        if proto == 'http' and not app.debug:
+            url = request.url.replace('http://', 'https://', 1)
+            return redirect(url, code=301)
+
+    # ── Error handlers ───────────────────────────────────────────────────────
+    @app.errorhandler(404)
+    def not_found(e):
+        return render_template('errors/404.html'), 404
+
+    @app.errorhandler(500)
+    def server_error(e):
+        return render_template('errors/500.html'), 500
+
     @app.errorhandler(429)
     def ratelimit_handler(e):
         from flask import request as req, flash as fls, redirect as redir, url_for as ufl
-        fls(f'Too many attempts. Please wait and try again.', 'danger')
-        # Redirect back to the referring page or home
+        fls('Too many attempts. Please wait and try again.', 'danger')
         return redir(req.referrer or ufl('auth.landing'))
+
+    # ── robots.txt ───────────────────────────────────────────────────────────
+    @app.route('/robots.txt')
+    def robots():
+        from flask import Response
+        txt = (
+            "User-agent: *\n"
+            "Allow: /\n"
+            "Disallow: /admin/\n"
+            "Disallow: /dashboard/\n"
+            "Disallow: /billing/webhook\n"
+            f"Sitemap: https://www.flipafind.com/sitemap.xml\n"
+        )
+        return Response(txt, mimetype='text/plain')
 
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
@@ -117,6 +155,7 @@ def create_app():
             "ALTER TABLE analyses ADD COLUMN social_data TEXT",
             "ALTER TABLE analyses ADD COLUMN is_public INTEGER DEFAULT 0",
             "ALTER TABLE users ADD COLUMN backup_email VARCHAR(255)",
+            "ALTER TABLE users ADD COLUMN subscription_trial_end DATETIME",
         ]
         with db.engine.connect() as conn:
             for sql in _migrations:

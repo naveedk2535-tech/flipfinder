@@ -3,8 +3,10 @@ import logging
 import stripe
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
-from app import csrf, db
+from flask_mail import Message
+from app import csrf, db, mail
 from models.user import User
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -145,6 +147,38 @@ def _user_by_customer(customer_id):
     return User.query.filter_by(stripe_customer_id=customer_id).first()
 
 
+def _send_welcome_email(user, plan):
+    try:
+        plan_label = 'Pro' if plan == 'pro' else 'Premium'
+        msg = Message(f'Welcome to FlipAFind {plan_label}!', recipients=[user.email])
+        msg.html = f"""
+        <div style="font-family:sans-serif;background:#09090f;color:#f1f5f9;padding:32px;">
+          <div style="max-width:480px;margin:auto;background:#1a1a28;border:1px solid #252532;
+                      border-radius:16px;padding:32px;">
+            <h2 style="color:#a5b4fc;margin:0 0 8px;">You're on {plan_label}! 🎉</h2>
+            <p style="color:#94a3b8;margin:0 0 16px;">
+              Hi {user.name}, your 10-day free trial has started. You won't be charged until day 11.
+            </p>
+            <p style="color:#94a3b8;margin:0 0 16px;">
+              {'50 analyses/month, all platforms, trend & social data.' if plan == 'pro' else 'Unlimited analyses, priority processing, PDF report export.'}
+            </p>
+            <a href="https://www.flipafind.com/dashboard"
+               style="display:inline-block;background:#6366f1;color:white;padding:12px 24px;
+                      border-radius:10px;text-decoration:none;font-weight:600;">
+              Go to Dashboard →
+            </a>
+            <p style="color:#52526a;font-size:12px;margin-top:24px;">
+              To manage or cancel your subscription, visit your profile page.<br>
+              Questions? Contact us at hello@zzi.ai
+            </p>
+          </div>
+        </div>
+        """
+        mail.send(msg)
+    except Exception as e:
+        logger.error(f'Welcome email failed for {user.email}: {e}')
+
+
 def _on_checkout_completed(session):
     user_id = (session.get('metadata') or {}).get('user_id')
     plan    = (session.get('metadata') or {}).get('plan', 'pro')
@@ -158,10 +192,10 @@ def _on_checkout_completed(session):
     user.stripe_customer_id     = cust_id
     user.stripe_subscription_id = session.get('subscription')
     user.subscription_tier      = plan
-    # Stripe marks the session status 'trialing' when a trial is active
     user.subscription_status    = 'trialing' if session.get('status') == 'trialing' else 'active'
     db.session.commit()
     logger.info(f'Checkout complete: {user.email} → {plan} ({user.subscription_status})')
+    _send_welcome_email(user, plan)
 
 
 def _on_subscription_updated(sub):
@@ -179,10 +213,16 @@ def _on_subscription_updated(sub):
                 user.subscription_tier = 'premium'
             elif price_id == os.environ.get('STRIPE_PRO_PRICE_ID', ''):
                 user.subscription_tier = 'pro'
+        trial_end_ts = sub.get('trial_end')
+        if trial_end_ts:
+            user.subscription_trial_end = datetime.utcfromtimestamp(trial_end_ts)
+        elif status == 'active':
+            user.subscription_trial_end = None
     elif status in ('canceled', 'unpaid', 'past_due'):
         user.subscription_status = status
         if status == 'canceled':
             user.subscription_tier = 'free'
+            user.subscription_trial_end = None
 
     db.session.commit()
     logger.info(f'Subscription updated: {user.email} → {status}')

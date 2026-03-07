@@ -41,7 +41,12 @@
           {% else %}Free — 3 analyses/month{% endif %}
         </div>
         {% if current_user.subscription_status == 'trialing' %}
-          <div class="text-xs text-emerald-400 mt-1">✓ Free trial active — no charge yet</div>
+          <div class="text-xs text-emerald-400 mt-1">
+            ✓ Free trial active — no charge yet
+            {% if current_user.subscription_trial_end %}
+              · ends {{ current_user.subscription_trial_end.strftime('%d %b %Y') }}
+            {% endif %}
+          </div>
         {% elif current_user.subscription_status == 'past_due' %}
           <div class="text-xs text-red-400 mt-1">⚠ Payment past due — please update billing</div>
         {% endif %}
