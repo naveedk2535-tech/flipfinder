@@ -8,6 +8,21 @@
   <div class="absolute top-1/4 left-1/5 w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
   <div class="absolute bottom-1/4 right-1/5 w-[400px] h-[400px] bg-purple-600/15 rounded-full blur-[100px] animate-pulse pointer-events-none" style="animation-delay:1.5s"></div>
   <div class="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-blue-600/8 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+  <!-- Money green glow orbs -->
+  <div class="absolute top-[15%] right-[20%] w-[280px] h-[280px] bg-emerald-500/8 rounded-full blur-[90px] animate-pulse pointer-events-none" style="animation-delay:0.8s"></div>
+  <div class="absolute bottom-[10%] left-[15%] w-[240px] h-[240px] bg-green-500/8 rounded-full blur-[80px] animate-pulse pointer-events-none" style="animation-delay:2.2s"></div>
+  <!-- Floating money emojis (decorative) -->
+  <div class="absolute pointer-events-none select-none hidden lg:block" style="top:8%;left:12%;animation:floatY 6s ease-in-out infinite;opacity:0.12;font-size:1.5rem;" aria-hidden="true">💰</div>
+  <div class="absolute pointer-events-none select-none hidden lg:block" style="top:55%;right:8%;animation:floatY 7s ease-in-out infinite;animation-delay:1s;opacity:0.10;font-size:1.2rem;" aria-hidden="true">💸</div>
+  <div class="absolute pointer-events-none select-none hidden xl:block" style="top:30%;left:6%;animation:floatY 5s ease-in-out infinite;animation-delay:2s;opacity:0.10;font-size:1rem;" aria-hidden="true">🤑</div>
+  <div class="absolute pointer-events-none select-none hidden xl:block" style="bottom:20%;right:12%;animation:floatY 8s ease-in-out infinite;animation-delay:0.5s;opacity:0.09;font-size:1.3rem;" aria-hidden="true">💵</div>
+  <div class="absolute pointer-events-none select-none hidden xl:block" style="top:70%;left:22%;animation:floatY 6.5s ease-in-out infinite;animation-delay:3s;opacity:0.08;font-size:1.1rem;" aria-hidden="true">📈</div>
+  <style>
+    @keyframes floatY {
+      0%,100% { transform: translateY(0px) rotate(-3deg); }
+      50%      { transform: translateY(-18px) rotate(3deg); }
+    }
+  </style>
 
   <!-- Floating background product cards (decorative, lg+ only) -->
   <div class="absolute top-[12%] right-[3%] opacity-[0.13] pointer-events-none select-none hidden lg:block" style="transform: rotate(7deg);" aria-hidden="true">
@@ -106,66 +121,91 @@
       <span class="stat-badge">🤖 4 AI Agents</span>
     </div>
 
-    <!-- App preview card -->
-    <div class="relative max-w-md mx-auto pt-7 pb-7">
-      <!-- Glow beneath card -->
+    <!-- Rotating App Preview Cards -->
+    <div class="relative max-w-md mx-auto pt-7 pb-10">
       <div class="preview-card-glow"></div>
 
-      <div class="glow-card p-5 text-left" style="background: linear-gradient(145deg, #1a1a28, #141420);">
-        <!-- Header row -->
-        <div class="flex items-start gap-3 mb-4">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 mt-0.5"
-               style="background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(168,85,247,0.2)); border: 1px solid rgba(99,102,241,0.2);">
-            👟
+      <!-- Card wrapper -->
+      <div class="relative" style="min-height:230px;">
+
+        <!-- Card 1: Nike Air Jordan -->
+        <div class="hero-card glow-card p-5 text-left absolute inset-0 transition-all duration-700" data-idx="0" style="background:linear-gradient(145deg,#1a1a28,#141420); opacity:1; transform:scale(1);">
+          <div class="flex items-start gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 mt-0.5" style="background:linear-gradient(135deg,rgba(99,102,241,0.25),rgba(168,85,247,0.2));border:1px solid rgba(99,102,241,0.2);">👟</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-heading font-semibold text-sm text-[#f1f5f9] truncate tracking-tight">Nike Air Jordan 1 Retro High OG</div>
+              <div class="text-xs text-[#52526a] mt-0.5">Chicago · US10 · Used Once · Original Box</div>
+              <span class="inline-block mt-1.5 text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-bold tracking-wide">STRONG FLIP</span>
+            </div>
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-heading font-semibold text-sm text-[#f1f5f9] truncate tracking-tight">Nike Air Jordan 1 Retro High OG</div>
-            <div class="text-xs text-[#52526a] mt-0.5">Chicago · US10 · Used Once · Original Box</div>
-            <span class="inline-block mt-1.5 text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-bold tracking-wide">STRONG FLIP</span>
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);"><div class="text-[#52526a] text-xs mb-1">Buy At</div><div class="font-heading font-bold text-[#f1f5f9] text-sm">$140</div></div>
+            <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);"><div class="text-[#52526a] text-xs mb-1">Sell For</div><div class="font-heading font-bold text-[#f1f5f9] text-sm">$310</div></div>
+            <div class="rounded-xl p-3 text-center" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);"><div class="text-emerald-400/70 text-xs mb-1">Net ROI</div><div class="font-heading font-bold text-emerald-400 text-sm">+121%</div></div>
+          </div>
+          <div class="flex items-center justify-between text-xs mb-3 px-0.5"><span class="text-[#52526a]">After shipping &amp; fees</span><span class="text-[#f1f5f9]/80 font-semibold">+$124 true profit</span></div>
+          <div class="flex items-center gap-3 mb-3"><div class="flex-1 bg-[#111118] rounded-full h-1.5 overflow-hidden"><div class="h-1.5 rounded-full" style="width:82%;background:linear-gradient(90deg,#6366f1,#a855f7);"></div></div><span class="text-xs text-[#52526a] flex-shrink-0 font-medium">82/100</span></div>
+          <div class="flex items-center justify-between">
+            <div class="flex gap-2 flex-wrap"><span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">eBay recommended</span><span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Low risk</span></div>
+            <span class="text-[#52526a] text-xs">AI estimate</span>
           </div>
         </div>
 
-        <!-- Stats grid -->
-        <div class="grid grid-cols-3 gap-2 mb-4">
-          <div class="rounded-xl p-3 text-center" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-            <div class="text-[#52526a] text-xs mb-1">Buy At</div>
-            <div class="font-heading font-bold text-[#f1f5f9] text-sm">$140</div>
+        <!-- Card 2: Supreme Box Logo Hoodie -->
+        <div class="hero-card glow-card p-5 text-left absolute inset-0 transition-all duration-700" data-idx="1" style="background:linear-gradient(145deg,#1a1a28,#141420); opacity:0; transform:scale(0.97); pointer-events:none;">
+          <div class="flex items-start gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 mt-0.5" style="background:linear-gradient(135deg,rgba(239,68,68,0.2),rgba(168,85,247,0.15));border:1px solid rgba(239,68,68,0.2);">🧢</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-heading font-semibold text-sm text-[#f1f5f9] truncate tracking-tight">Supreme Box Logo Hoodie SS23</div>
+              <div class="text-xs text-[#52526a] mt-0.5">Red · Size L · Deadstock · Tags Attached</div>
+              <span class="inline-block mt-1.5 text-xs px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/25 font-bold tracking-wide">PREMIUM FLIP</span>
+            </div>
           </div>
-          <div class="rounded-xl p-3 text-center" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-            <div class="text-[#52526a] text-xs mb-1">Sell For</div>
-            <div class="font-heading font-bold text-[#f1f5f9] text-sm">$310</div>
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);"><div class="text-[#52526a] text-xs mb-1">Buy At</div><div class="font-heading font-bold text-[#f1f5f9] text-sm">$195</div></div>
+            <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);"><div class="text-[#52526a] text-xs mb-1">Sell For</div><div class="font-heading font-bold text-[#f1f5f9] text-sm">$640</div></div>
+            <div class="rounded-xl p-3 text-center" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);"><div class="text-emerald-400/70 text-xs mb-1">Net ROI</div><div class="font-heading font-bold text-emerald-400 text-sm">+228%</div></div>
           </div>
-          <div class="rounded-xl p-3 text-center" style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2);">
-            <div class="text-emerald-400/70 text-xs mb-1">Net ROI</div>
-            <div class="font-heading font-bold text-emerald-400 text-sm">+121%</div>
+          <div class="flex items-center justify-between text-xs mb-3 px-0.5"><span class="text-[#52526a]">After shipping &amp; fees</span><span class="text-[#f1f5f9]/80 font-semibold">+$298 true profit</span></div>
+          <div class="flex items-center gap-3 mb-3"><div class="flex-1 bg-[#111118] rounded-full h-1.5 overflow-hidden"><div class="h-1.5 rounded-full" style="width:91%;background:linear-gradient(90deg,#6366f1,#a855f7);"></div></div><span class="text-xs text-[#52526a] flex-shrink-0 font-medium">91/100</span></div>
+          <div class="flex items-center justify-between">
+            <div class="flex gap-2 flex-wrap"><span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">StockX recommended</span><span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Low risk</span></div>
+            <span class="text-[#52526a] text-xs">AI estimate</span>
           </div>
         </div>
 
-        <!-- After shipping row -->
-        <div class="flex items-center justify-between text-xs mb-3 px-0.5">
-          <span class="text-[#52526a]">After shipping &amp; fees</span>
-          <span class="text-[#f1f5f9]/80 font-semibold">+$124 true profit</span>
-        </div>
-
-        <!-- Score bar -->
-        <div class="flex items-center gap-3 mb-3">
-          <div class="flex-1 bg-[#111118] rounded-full h-1.5 overflow-hidden">
-            <div class="h-1.5 rounded-full" style="width: 82%; background: linear-gradient(90deg, #6366f1, #a855f7);"></div>
+        <!-- Card 3: Vintage Rolex Datejust -->
+        <div class="hero-card glow-card p-5 text-left absolute inset-0 transition-all duration-700" data-idx="2" style="background:linear-gradient(145deg,#1a1a28,#141420); opacity:0; transform:scale(0.97); pointer-events:none;">
+          <div class="flex items-start gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 mt-0.5" style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(99,102,241,0.15));border:1px solid rgba(245,158,11,0.2);">⌚</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-heading font-semibold text-sm text-[#f1f5f9] truncate tracking-tight">Rolex Datejust 41 Jubilee Steel</div>
+              <div class="text-xs text-[#52526a] mt-0.5">Ref. 126300 · 2019 · Full Set · Box & Papers</div>
+              <span class="inline-block mt-1.5 text-xs px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25 font-bold tracking-wide">SOLID FLIP</span>
+            </div>
           </div>
-          <span class="text-xs text-[#52526a] flex-shrink-0 font-medium">82/100</span>
-        </div>
-
-        <!-- Footer row -->
-        <div class="flex items-center justify-between">
-          <div class="flex gap-2 flex-wrap">
-            <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">eBay recommended</span>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Low risk</span>
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);"><div class="text-[#52526a] text-xs mb-1">Buy At</div><div class="font-heading font-bold text-[#f1f5f9] text-sm">$7,200</div></div>
+            <div class="rounded-xl p-3 text-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);"><div class="text-[#52526a] text-xs mb-1">Sell For</div><div class="font-heading font-bold text-[#f1f5f9] text-sm">$9,800</div></div>
+            <div class="rounded-xl p-3 text-center" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);"><div class="text-emerald-400/70 text-xs mb-1">Net ROI</div><div class="font-heading font-bold text-emerald-400 text-sm">+36%</div></div>
           </div>
-          <span class="text-[#52526a] text-xs">AI estimate</span>
+          <div class="flex items-center justify-between text-xs mb-3 px-0.5"><span class="text-[#52526a]">After shipping &amp; fees</span><span class="text-[#f1f5f9]/80 font-semibold">+$2,140 true profit</span></div>
+          <div class="flex items-center gap-3 mb-3"><div class="flex-1 bg-[#111118] rounded-full h-1.5 overflow-hidden"><div class="h-1.5 rounded-full" style="width:78%;background:linear-gradient(90deg,#6366f1,#a855f7);"></div></div><span class="text-xs text-[#52526a] flex-shrink-0 font-medium">78/100</span></div>
+          <div class="flex items-center justify-between">
+            <div class="flex gap-2 flex-wrap"><span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">Chrono24 recommended</span><span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Safe bet</span></div>
+            <span class="text-[#52526a] text-xs">AI estimate</span>
+          </div>
         </div>
       </div>
 
-      <!-- Floating labels — only visible on large screens where card has room -->
+      <!-- Dot indicators -->
+      <div class="flex justify-center gap-2 mt-5">
+        <button class="hero-dot w-2 h-2 rounded-full transition-all duration-300 bg-indigo-500" data-idx="0" aria-label="Example 1"></button>
+        <button class="hero-dot w-2 h-2 rounded-full transition-all duration-300 bg-[#252532]" data-idx="1" aria-label="Example 2"></button>
+        <button class="hero-dot w-2 h-2 rounded-full transition-all duration-300 bg-[#252532]" data-idx="2" aria-label="Example 3"></button>
+      </div>
+
+      <!-- Floating labels -->
       <div class="absolute right-0 lg:-right-6 -top-5 lg:top-4 flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm">
         <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> ROI tracked
       </div>
@@ -175,6 +215,36 @@
     </div>
   </div>
 </section>
+
+<script>
+(function(){
+  const cards = document.querySelectorAll('.hero-card');
+  const dots  = document.querySelectorAll('.hero-dot');
+  let current = 0;
+
+  function showCard(idx) {
+    cards.forEach((c, i) => {
+      if (i === idx) {
+        c.style.opacity = '1';
+        c.style.transform = 'scale(1)';
+        c.style.pointerEvents = 'auto';
+      } else {
+        c.style.opacity = '0';
+        c.style.transform = 'scale(0.97)';
+        c.style.pointerEvents = 'none';
+      }
+    });
+    dots.forEach((d, i) => {
+      d.classList.toggle('bg-indigo-500', i === idx);
+      d.classList.toggle('bg-[#252532]', i !== idx);
+    });
+    current = idx;
+  }
+
+  dots.forEach(d => d.addEventListener('click', () => showCard(+d.dataset.idx)));
+  setInterval(() => showCard((current + 1) % cards.length), 4000);
+})();
+</script>
 
 <!-- How It Works -->
 <section id="how-it-works" class="py-24" style="background: #0e0e18;">
@@ -237,10 +307,10 @@
   </div>
 </section>
 
-<!-- Beta Banner -->
-<section class="py-3.5 border-b border-emerald-500/15 text-center" style="background: rgba(16,185,129,0.05);">
-  <p class="text-emerald-400/80 text-sm font-medium">
-    🎉 Beta Launch — All features are completely free. No credit card required.
+<!-- Promo Banner -->
+<section class="py-3.5 border-b border-orange-500/15 text-center" style="background: rgba(249,115,22,0.05);">
+  <p class="text-orange-400/90 text-sm font-medium">
+    🔥 Limited Time — Pro plan 50% OFF · Lock in $14.99/month forever · <a href="{{ url_for('auth.signup', plan='pro') }}" class="underline font-bold hover:text-orange-300">Start your free trial →</a>
   </p>
 </section>
 
