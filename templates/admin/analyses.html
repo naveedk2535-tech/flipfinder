@@ -27,6 +27,7 @@
           <th class="px-4 py-3">Type</th>
           <th class="px-4 py-3">Status</th>
           <th class="px-4 py-3">ROI</th>
+          <th class="px-4 py-3">Public</th>
           <th class="px-4 py-3">Date</th>
           <th class="px-4 py-3">Actions</th>
         </tr>
@@ -42,14 +43,19 @@
           <td class="px-4 py-3">
             {% if a.status == 'complete' %}
               {% set roi = a.get_roi_value() %}
-              <span class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %}">
+              {% set roi_cls = a.get_roi_class() %}
+              <span class="font-bold {% if roi_cls == 'success' %}text-emerald-400{% elif roi_cls == 'good' %}text-green-400{% elif roi_cls == 'warning' %}text-amber-400{% else %}text-red-400{% endif %}">
                 {{ "%.0f"|format(roi) }}%
               </span>
             {% else %}—{% endif %}
           </td>
+          <td class="px-4 py-3">
+            {% if a.is_public %}<span class="text-xs text-emerald-400">✓</span>{% else %}<span class="text-xs text-[#52526a]">—</span>{% endif %}
+          </td>
           <td class="px-4 py-3 text-[#52526a]">{{ a.created_at.strftime('%d %b %Y') }}</td>
           <td class="px-4 py-3">
             <div class="flex gap-2">
+              <a href="{{ url_for('analysis.results', id=a.id) }}" class="text-emerald-400 text-xs hover:underline" target="_blank">View</a>
               <a href="{{ url_for('admin.edit_analysis', id=a.id) }}" class="text-indigo-400 text-xs hover:underline">Edit</a>
               <form method="POST" action="{{ url_for('admin.delete_analysis', id=a.id) }}" class="inline"
                 onsubmit="return confirm('Delete this analysis?')">

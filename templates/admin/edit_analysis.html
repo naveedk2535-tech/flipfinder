@@ -4,7 +4,10 @@
 <div class="max-w-3xl mx-auto px-4 py-10">
   <div class="flex items-center justify-between mb-6">
     <h1 class="font-heading font-bold text-2xl text-gradient">Edit Analysis #{{ analysis.id }}</h1>
-    <a href="{{ url_for('admin.analyses') }}" class="text-sm text-indigo-400 hover:underline">← Analyses</a>
+    <div class="flex gap-4">
+      <a href="{{ url_for('analysis.results', id=analysis.id) }}" class="text-sm text-emerald-400 hover:underline" target="_blank">View Results ↗</a>
+      <a href="{{ url_for('admin.analyses') }}" class="text-sm text-indigo-400 hover:underline">← Analyses</a>
+    </div>
   </div>
 
   <div class="card p-8">
@@ -32,6 +35,16 @@
         <div>
           <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Error Message</label>
           <textarea name="error_message" rows="2" class="input-field w-full resize-none">{{ analysis.error_message or '' }}</textarea>
+        </div>
+        {% for field, label in [('trend_data','Trend Data JSON'),('social_data','Social Data JSON')] %}
+        <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">{{ label }}</label>
+          <textarea name="{{ field }}" rows="4" class="input-field w-full resize-y font-mono text-xs">{{ getattr(analysis, field) or '' }}</textarea>
+        </div>
+        {% endfor %}
+        <div class="flex items-center gap-3">
+          <input type="checkbox" name="is_public" id="is_public" class="w-4 h-4 rounded" {% if analysis.is_public %}checked{% endif %}>
+          <label for="is_public" class="text-sm font-medium text-[#f1f5f9]/70">Publicly shared</label>
         </div>
         <div class="flex gap-3">
           <button type="submit" class="btn-primary flex-1 py-3">Save Changes</button>

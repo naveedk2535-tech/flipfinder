@@ -1,44 +1,81 @@
 {% extends "base.html" %}
-{% block title %}Privacy Policy — FlipFinder{% endblock %}
+{% block title %}Privacy Policy — FlipAFind{% endblock %}
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-16">
   <h1 class="font-heading font-extrabold text-3xl text-gradient mb-2">Privacy Policy</h1>
-  <p class="text-[#52526a] text-sm mb-10">Last updated: March 2025</p>
+  <p class="text-[#52526a] text-sm mb-10">Last updated: March 2026</p>
 
   <div class="space-y-8 text-[#f1f5f9]/80 text-sm leading-relaxed">
     <section>
       <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">1. Information We Collect</h2>
-      <p>We collect information you provide when you create an account (name, email address, password) and when you use FlipFinder (product descriptions, images, search queries, analysis history). We also automatically collect basic usage data such as pages visited, timestamps, and your IP address for security and analytics purposes.</p>
+      <p>We collect information you provide when you create an account (name, email address, hashed password) and when you use FlipAFind (product descriptions, images, links, search queries, and analysis history). We also automatically collect basic usage data including pages visited, timestamps, IP addresses, browser user-agent strings, and referring URLs for security monitoring and internal analytics.</p>
     </section>
 
     <section>
       <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">2. How We Use Your Information</h2>
-      <p>We use your information to provide and improve the FlipFinder service, process your analyses, send account-related communications, and maintain the security of the platform. We do not sell your personal data to third parties.</p>
+      <p>We use your information to: provide and operate the FlipAFind service; process and return your analyses; send transactional account communications (e.g. password resets, email verification); detect and prevent fraud and abuse; and improve the quality of the Service. We do not sell, rent, or trade your personal data to third parties.</p>
     </section>
 
     <section>
       <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">3. AI Processing</h2>
-      <p>Product descriptions and images you submit are processed by Google Gemini AI to generate market research and arbitrage analysis. By using FlipFinder you consent to this processing. Input data is used only to generate your analysis and is not used to train AI models.</p>
+      <p>Product descriptions, images, and links you submit are processed by the following AI inference services to generate market research and arbitrage analysis:</p>
+      <ul class="list-disc list-inside mt-2 space-y-1">
+        <li><strong>Google Gemini</strong> (Google LLC) — used for product identification and market research</li>
+        <li><strong>Groq</strong> (Groq, Inc.) — used for fast inference on analysis tasks</li>
+      </ul>
+      <p class="mt-2">By using FlipAFind you consent to your submitted content being sent to these processors for the sole purpose of generating your analysis. Your input data is not used to train AI models by either provider, in accordance with their respective API terms of service. These providers may retain request data for a limited period for safety and abuse monitoring as described in their own privacy policies.</p>
     </section>
 
     <section>
-      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">4. Data Storage</h2>
-      <p>Your data is stored securely on servers in the United States. Analysis history is retained for up to 10 analyses per account. Account data is retained until you delete your account.</p>
+      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">4. Third-Party Services</h2>
+      <p>We use the following third-party services in the operation of FlipAFind. Each is subject to its own privacy policy:</p>
+      <ul class="list-disc list-inside mt-2 space-y-1">
+        <li><strong>Stripe, Inc.</strong> — payment processing for paid subscriptions. Stripe collects and processes your payment card details directly; we do not store card numbers. See <a href="https://stripe.com/privacy" class="text-indigo-400 hover:underline" target="_blank" rel="noopener">stripe.com/privacy</a>.</li>
+        <li><strong>Google Gemini</strong> — AI inference (see Section 3 above).</li>
+        <li><strong>Groq</strong> — AI inference (see Section 3 above).</li>
+        <li><strong>DuckDuckGo</strong> — used to search for product pricing data as part of the analysis pipeline. Queries are sent without any personally identifiable information.</li>
+        <li><strong>PythonAnywhere</strong> (Anaconda, Inc.) — cloud hosting platform. Your data is stored on their servers. See <a href="https://www.pythonanywhere.com/privacy_v2/" class="text-indigo-400 hover:underline" target="_blank" rel="noopener">pythonanywhere.com/privacy</a>.</li>
+      </ul>
     </section>
 
     <section>
-      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">5. Cookies</h2>
-      <p>We use session cookies to keep you logged in. No third-party tracking or advertising cookies are used.</p>
+      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">5. Data Storage & Retention</h2>
+      <p>Your data is stored on servers hosted by PythonAnywhere (located in the United States and/or United Kingdom). Analysis history is limited to your 10 most recent analyses per account; older analyses are automatically deleted. Account data is retained until you request deletion of your account. Log data (IP addresses, page visits) is periodically cleared.</p>
     </section>
 
     <section>
-      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">6. Your Rights</h2>
-      <p>You may request deletion of your account and associated data at any time by contacting us. You can update your profile information from your account settings.</p>
+      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">6. International Data Transfers</h2>
+      <p>FlipAFind is operated from the United Kingdom and our hosting infrastructure is located in the US and/or UK. If you access the Service from the European Economic Area (EEA) or other regions with data protection laws, please be aware that your data may be transferred to and processed in countries that may not provide the same level of data protection as your home country. By using the Service, you consent to this transfer.</p>
     </section>
 
     <section>
-      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">7. Contact</h2>
-      <p>For any privacy-related questions, contact us at <span class="text-indigo-400">support@flipfinder.app</span>.</p>
+      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">7. Cookies</h2>
+      <p>We use session cookies solely to keep you logged in to your account. We do not use third-party advertising cookies, tracking pixels, or behavioural analytics cookies. You can disable cookies in your browser settings, but doing so will prevent you from remaining logged in.</p>
+    </section>
+
+    <section>
+      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">8. Your Rights</h2>
+      <p>Depending on your jurisdiction, you may have the right to access, correct, or delete your personal data, or to restrict or object to its processing. To exercise any of these rights, or to request deletion of your account and all associated data, contact us at <a href="mailto:hello@zzi.ai" class="text-indigo-400 hover:underline">hello@zzi.ai</a>. We will respond within 30 days. You may also update your profile information at any time from your account settings page.</p>
+    </section>
+
+    <section>
+      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">9. Children's Privacy</h2>
+      <p>FlipAFind is not directed at children under the age of 13. We do not knowingly collect personal data from children under 13. If we become aware that a child under 13 has provided us with personal data, we will delete it promptly. If you believe we have inadvertently collected such data, please contact us at <a href="mailto:hello@zzi.ai" class="text-indigo-400 hover:underline">hello@zzi.ai</a>.</p>
+    </section>
+
+    <section>
+      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">10. Data Breach Notification</h2>
+      <p>In the event of a data breach that affects your personal information, we will notify affected users within 72 hours of becoming aware of the breach (where technically feasible), and will report to the relevant supervisory authority as required by applicable law.</p>
+    </section>
+
+    <section>
+      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">11. Changes to This Policy</h2>
+      <p>We may update this Privacy Policy from time to time. When we do, we will update the "Last updated" date at the top of this page. Material changes will be notified to registered users by email where practicable. Continued use of the Service after changes are posted constitutes your acceptance of the updated policy.</p>
+    </section>
+
+    <section>
+      <h2 class="font-heading font-bold text-lg text-[#f1f5f9] mb-3">12. Contact</h2>
+      <p>For any privacy-related questions or requests, contact us at <a href="mailto:hello@zzi.ai" class="text-indigo-400 hover:underline">hello@zzi.ai</a>.</p>
     </section>
   </div>
 </div>

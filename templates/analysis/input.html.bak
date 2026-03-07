@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}New Analysis — FlipAFind{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8 sm:py-10">
+  <div class="text-center mb-8">
+    <h1 class="font-heading font-bold text-2xl sm:text-3xl text-gradient mb-2">Analyse a Product</h1>
+    <p class="text-[#52526a] text-sm sm:text-base">Paste a URL, upload an image, or describe the item</p>
+  </div>
+
+  <div class="card p-5 sm:p-8">
+    <form method="POST" action="{{ url_for('analysis.submit') }}" enctype="multipart/form-data" id="analysis-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- 1. Image Upload (Coming Soon) -->
+      <div class="relative mb-5">
+        <div class="upload-zone opacity-40 pointer-events-none select-none" id="upload-zone">
+          <input type="file" name="image" id="image-input" accept=".jpg,.jpeg,.png,.webp" class="hidden" disabled>
+          <div class="upload-zone-content py-5" id="upload-placeholder">
+            <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto mb-2 text-[#52526a]"></i>
+            <p class="text-[#f1f5f9]/70 font-medium mb-1 text-sm">Drag and drop or click to upload</p>
+            <p class="text-[#52526a] text-xs">JPG, PNG, WebP — max 8MB</p>
+          </div>
+          <div class="upload-zone-content hidden py-5" id="upload-preview">
+            <img id="preview-img" src="" alt="Preview" class="max-h-40 max-w-full mx-auto rounded-lg mb-3">
+            <p id="preview-name" class="text-[#f1f5f9]/70 text-sm font-medium mb-2"></p>
+            <button type="button" id="clear-image" class="text-red-400 text-sm hover:underline">Remove image</button>
+          </div>
+        </div>
+        <div id="images-coming-soon" class="absolute inset-0 flex items-center justify-center rounded-xl pointer-events-none">
+          <div class="bg-[#111118]/90 border border-[#252532] rounded-xl px-5 py-3 text-center shadow-lg">
+            <span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs font-bold px-3 py-1 rounded-full">Coming Soon</span>
+            <p class="text-[#52526a] text-xs mt-2">Image analysis — launching shortly</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- OR divider -->
+      <div class="flex items-center gap-3 my-5">
+        <div class="flex-1 border-t border-[#252532]"></div>
+        <span class="text-[#52526a] text-xs font-medium">OR</span>
+        <div class="flex-1 border-t border-[#252532]"></div>
+      </div>
+
+      <!-- 2. Product URL — PROMINENT (best method) -->
+      <div class="mb-5 rounded-xl p-4 sm:p-5" style="background: rgba(99,102,241,0.05); border: 1px solid rgba(99,102,241,0.25);">
+        <div class="flex items-center justify-between mb-2.5">
+          <label for="link-input" class="text-sm font-semibold text-[#f1f5f9]/90 flex items-center gap-2">
+            <i data-lucide="link" class="w-4 h-4 text-indigo-400"></i>
+            Paste a Product URL
+          </label>
+          <span class="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold">⭐ Recommended</span>
+        </div>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+            <i data-lucide="globe" class="w-4 h-4 text-[#52526a]"></i>
+          </div>
+          <input type="url" name="link" id="link-input"
+            placeholder="https://www.ebay.com/itm/... or any product page URL"
+            class="input-field w-full pl-10 py-3 text-sm">
+        </div>
+        <p class="text-xs text-[#52526a] mt-2">Works with eBay, Depop, Poshmark, StockX, Farfetch, Net-a-Porter, and most product pages</p>
+      </div>
+
+      <!-- OR divider -->
+      <div class="flex items-center gap-3 my-5">
+        <div class="flex-1 border-t border-[#252532]"></div>
+        <span class="text-[#52526a] text-xs font-medium">OR</span>
+        <div class="flex-1 border-t border-[#252532]"></div>
+      </div>
+
+      <!-- 3. Text description -->
+      <div class="mb-7">
+        <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-2">
+          <span class="flex items-center gap-2">
+            <i data-lucide="pencil-line" class="w-4 h-4 text-[#52526a]"></i>
+            Describe the product
+            <span class="text-[#52526a] font-normal ml-auto text-xs"><span id="char-count">0</span> / 2000</span>
+          </span>
+        </label>
+        <textarea name="description" id="description" rows="3" maxlength="2000"
+          placeholder="e.g. Nike Air Jordan 1 Retro High Chicago, size US10, worn once, original box included"
+          class="input-field w-full resize-none text-sm"></textarea>
+      </div>
+
+      <button type="submit" id="submit-btn" class="btn-primary w-full py-3.5 text-base font-semibold">
+        <i data-lucide="zap" class="w-5 h-5 mr-2 inline"></i>
+        <span id="submit-text">Analyse Product</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const desc = document.getElementById('description');
+  const counter = document.getElementById('char-count');
+  desc.addEventListener('input', () => { counter.textContent = desc.value.length; });
+
+  const IMAGES_ENABLED = false;
+  const zone = document.getElementById('upload-zone');
+  const input = document.getElementById('image-input');
+  const placeholder = document.getElementById('upload-placeholder');
+  const preview = document.getElementById('upload-preview');
+  const previewImg = document.getElementById('preview-img');
+  const previewName = document.getElementById('preview-name');
+  const clearBtn = document.getElementById('clear-image');
+
+  if (IMAGES_ENABLED) {
+    input.removeAttribute('disabled');
+    zone.classList.remove('opacity-40', 'pointer-events-none', 'select-none');
+    const comingSoon = document.getElementById('images-coming-soon');
+    if (comingSoon) comingSoon.style.display = 'none';
+    zone.addEventListener('click', (e) => { if (!e.target.closest('#upload-preview')) input.click(); });
+    zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) showPreview(e.dataTransfer.files[0]);
+    });
+    input.addEventListener('change', () => { if (input.files[0]) showPreview(input.files[0]); });
+    clearBtn.addEventListener('click', () => {
+      input.value = ''; preview.classList.add('hidden'); placeholder.classList.remove('hidden'); previewImg.src = '';
+    });
+  }
+
+  function showPreview(file) {
+    if (file.size > 8 * 1024 * 1024) { alert('File too large. Max 8MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImg.src = e.target.result;
+      previewName.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + 'MB)';
+      placeholder.classList.add('hidden'); preview.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  document.getElementById('analysis-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const hasImage = input.files && input.files[0];
+    const hasText = desc.value.trim().length > 0;
+    const hasLink = document.getElementById('link-input').value.trim().length > 0;
+    if (!hasImage && !hasText && !hasLink) {
+      alert('Please provide an image, description, or product URL.'); return;
+    }
+    showLoadingOverlay();
+    try {
+      const form = document.getElementById('analysis-form');
+      const resp = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+      window.location.href = resp.url;
+    } catch { window.location.href = '/dashboard'; }
+  });
+
+  const TIPS = [
+    "Items with original packaging sell for 20–30% more on average.",
+    "eBay's sold listings show exactly what buyers actually paid — always check before pricing.",
+    "Streetwear in deadstock condition can fetch 3–5× retail on StockX.",
+    "Poshmark charges a flat $2.95 fee for sales under $15 — great for cheap flips.",
+    "The global resale market hit $227B in 2023 and is projected to double by 2028.",
+    "Authentication badges on GOAT and StockX let you charge a premium with confidence.",
+    "Vintage luxury items in excellent condition often appreciate — patience pays.",
+    "Limited collab drops typically flip for 2–4× retail within 72 hours.",
+    "Facebook Marketplace and OfferUp are goldmines for underpriced local finds.",
+    "The best flippers buy at 40–50% of resale value to leave room for fees and profit.",
+    "Thrift stores near affluent zip codes tend to have better quality donations.",
+  ];
+
+  const STAGES = [
+    { label: "Identifying product",       secs: 6  },
+    { label: "Researching market prices", secs: 18 },
+    { label: "Finding sourcing deals",    secs: 20 },
+    { label: "Calculating arbitrage",     secs: 8  },
+  ];
+
+  function showLoadingOverlay() {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.classList.remove('hidden'); overlay.classList.add('flex');
+    let elapsed = 0, tipIdx = 0, stageIdx = 0, stageElapsed = 0;
+    const timerEl = document.getElementById('lo-timer');
+    const tipEl = document.getElementById('lo-tip');
+    const barEl = document.getElementById('lo-bar');
+    const stageEls = document.querySelectorAll('.lo-stage');
+
+    function setStage(i) {
+      stageEls.forEach((el, idx) => {
+        const dot = el.querySelector('.lo-dot'), text = el.querySelector('.lo-stage-text');
+        if (idx < i) {
+          dot.style.background = '#22c55e';
+          dot.innerHTML = '<svg style="width:12px;height:12px;fill:none;stroke:white;display:block;margin:auto;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>';
+          text.style.color = '#a5b4fc';
+        } else if (idx === i) {
+          dot.style.background = '#6366f1';
+          dot.innerHTML = '<span style="display:block;width:8px;height:8px;background:white;border-radius:50%;animation:lo-pulse 1s ease-in-out infinite;margin:auto;"></span>';
+          text.style.color = '#ffffff';
+        } else { dot.style.background = '#252532'; dot.innerHTML = ''; text.style.color = '#52526a'; }
+      });
+    }
+    setStage(0);
+    const interval = setInterval(() => {
+      elapsed++; stageElapsed++;
+      timerEl.textContent = String(Math.floor(elapsed/60)).padStart(2,'0') + ':' + String(elapsed%60).padStart(2,'0');
+      const total = STAGES.reduce((a,b) => a+b.secs, 0);
+      barEl.style.width = Math.min(95, Math.round((elapsed/total)*100)) + '%';
+      if (stageIdx < STAGES.length-1 && stageElapsed >= STAGES[stageIdx].secs) { stageIdx++; stageElapsed = 0; setStage(stageIdx); }
+      if (elapsed % 6 === 0) {
+        tipIdx = (tipIdx+1) % TIPS.length;
+        tipEl.style.opacity = '0';
+        setTimeout(() => { tipEl.textContent = TIPS[tipIdx]; tipEl.style.opacity = '1'; }, 300);
+      }
+    }, 1000);
+  }
+</script>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="hidden fixed inset-0 z-50 flex-col items-center justify-center px-4"
+     style="background: rgba(13,13,20,0.97); backdrop-filter: blur(8px);">
+  <div class="mb-6 relative">
+    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center"
+         style="background: linear-gradient(135deg,#6366f1,#a855f7); box-shadow: 0 0 40px rgba(99,102,241,0.5);">
+      <svg class="w-8 h-8 sm:w-10 sm:h-10 text-white lo-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+      </svg>
+    </div>
+    <div class="absolute -inset-2 rounded-3xl lo-glow"></div>
+  </div>
+  <h2 class="text-xl sm:text-2xl font-bold text-white mb-1">Analysing your product</h2>
+  <p class="text-[#52526a] text-sm mb-6">Our AI is scanning the resale market for you</p>
+  <div class="w-full max-w-xs sm:max-w-sm bg-[#1a1a2e] rounded-full h-2 mb-6 overflow-hidden">
+    <div id="lo-bar" class="h-2 rounded-full lo-bar-fill" style="width:0%; transition: width 1s linear;"></div>
+  </div>
+  <div class="flex flex-col gap-2.5 mb-7 w-full max-w-xs sm:max-w-sm">
+    <div class="lo-stage flex items-center gap-3"><div class="lo-dot w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background:#252532"></div><span class="lo-stage-text text-sm" style="color:#52526a">Identifying product</span></div>
+    <div class="lo-stage flex items-center gap-3"><div class="lo-dot w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background:#252532"></div><span class="lo-stage-text text-sm" style="color:#52526a">Researching market prices</span></div>
+    <div class="lo-stage flex items-center gap-3"><div class="lo-dot w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background:#252532"></div><span class="lo-stage-text text-sm" style="color:#52526a">Finding sourcing deals</span></div>
+    <div class="lo-stage flex items-center gap-3"><div class="lo-dot w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background:#252532"></div><span class="lo-stage-text text-sm" style="color:#52526a">Calculating arbitrage</span></div>
+  </div>
+  <div class="flex items-center gap-2 text-[#52526a] text-sm mb-5">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span id="lo-timer" class="font-mono text-base">00:00</span><span>elapsed</span>
+  </div>
+  <div class="w-full max-w-xs sm:max-w-sm bg-[#1a1a2e] border border-[#252532] rounded-xl p-4 text-center">
+    <p class="text-xs font-semibold text-[#6366f1] uppercase tracking-wider mb-2">Flip Tip</p>
+    <p id="lo-tip" class="text-[#f1f5f9]/70 text-sm leading-relaxed" style="transition: opacity 0.3s ease;">Items with original packaging sell for 20–30% more on average.</p>
+  </div>
+</div>
+
+<style>
+  .lo-spin { animation: lo-spin 3s linear infinite; }
+  @keyframes lo-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .lo-glow { animation: lo-glow 2s ease-in-out infinite alternate; }
+  @keyframes lo-glow { from { box-shadow: 0 0 15px rgba(99,102,241,0.3); } to { box-shadow: 0 0 40px rgba(168,85,247,0.6); } }
+  .lo-bar-fill { background: linear-gradient(90deg, #6366f1, #a855f7); }
+  @keyframes lo-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.7; } }
+</style>
+{% endblock %}

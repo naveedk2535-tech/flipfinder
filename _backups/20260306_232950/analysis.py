@@ -17,8 +17,6 @@ class Analysis(db.Model):
     status = db.Column(db.String(20), default='pending')  # pending/processing/complete/error
     error_message = db.Column(db.Text, nullable=True)
     trend_data = db.Column(db.Text, nullable=True)
-    social_data = db.Column(db.Text, nullable=True)
-    is_public = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     def _parse(self, field):
@@ -44,9 +42,6 @@ class Analysis(db.Model):
     def get_trend(self):
         return self._parse(self.trend_data)
 
-    def get_social(self):
-        return self._parse(self.social_data)
-
     def get_roi_value(self):
         arb = self.get_arbitrage()
         try:
@@ -59,8 +54,6 @@ class Analysis(db.Model):
         if roi >= 100:
             return 'success'
         elif roi >= 50:
-            return 'good'
-        elif roi >= 0:
             return 'warning'
         return 'danger'
 

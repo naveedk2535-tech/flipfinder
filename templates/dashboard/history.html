@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Analysis History — FlipFinder{% endblock %}
+{% block title %}Analysis History — FlipAFind{% endblock %}
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 py-10">
   <div class="flex items-center justify-between mb-8">
@@ -29,7 +29,7 @@
             <td class="px-4 py-3 cursor-pointer" onclick="window.location='{{ url_for('analysis.results', id=a.id) }}'">
               {% if a.status == 'complete' %}
                 {% set roi = a.get_roi_value() %}
-                <span class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %}">
+                <span class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-green-400{% elif roi >= 0 %}text-amber-400{% else %}text-red-400{% endif %}">
                   {{ "%.0f"|format(roi) }}%
                 </span>
               {% else %}—{% endif %}

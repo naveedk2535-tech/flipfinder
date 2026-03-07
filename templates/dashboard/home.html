@@ -1,21 +1,53 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — FlipFinder{% endblock %}
+{% block title %}Dashboard — FlipAFind{% endblock %}
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-10">
+
+  {# ── Plan info helpers ── #}
+  {% set tier = current_user.subscription_tier %}
+  {% set limit = current_user.get_monthly_limit() %}
+  {% set used  = current_user.analyses_used_this_month %}
+  {% set is_unlimited = (current_user.is_admin or tier == 'premium') %}
+  {% set remaining = 0 if is_unlimited else [limit - used, 0] | max %}
+
   <!-- Header -->
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
     <div>
       <h1 class="font-heading font-bold text-2xl text-gradient">Welcome back, {{ current_user.name.split()[0] }}</h1>
-      <p class="text-[#52526a] text-sm mt-1">
-        <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full text-xs font-medium">
-          {{ current_user.subscription_tier | capitalize }} — Beta: Unlimited Access
-        </span>
+      <p class="text-[#52526a] text-sm mt-1 flex items-center gap-2 flex-wrap">
+        {# Plan badge #}
+        {% if current_user.is_admin %}
+          <span class="bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full text-xs font-medium">Admin — Unlimited</span>
+        {% elif tier == 'premium' %}
+          <span class="bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full text-xs font-medium">Premium — Unlimited</span>
+        {% elif tier == 'pro' %}
+          <span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full text-xs font-medium">Pro — {{ used }}/50 this month</span>
+        {% else %}
+          <span class="bg-[#1a1a2e] text-[#f1f5f9]/60 border border-[#2a2a3e] px-2 py-0.5 rounded-full text-xs font-medium">Free — {{ used }}/3 this month</span>
+        {% endif %}
+        {# Upgrade nudge for free users #}
+        {% if tier == 'free' and not current_user.is_admin %}
+          <a href="{{ url_for('billing.pricing') }}" class="text-xs text-emerald-400 hover:underline">Upgrade for more →</a>
+        {% endif %}
       </p>
     </div>
     <a href="{{ url_for('analysis.input_page') }}" class="btn-primary px-6 py-3">
       <i data-lucide="plus" class="w-4 h-4 mr-2 inline"></i> New Analysis
     </a>
   </div>
+
+  {# ── Upgrade banner — shown to free users approaching their limit ── #}
+  {% if tier == 'free' and not current_user.is_admin and used >= 2 %}
+  <div class="mb-8 rounded-xl border border-amber-500/30 bg-amber-500/5 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <p class="text-amber-400 font-medium text-sm">
+        {% if remaining == 0 %}You've used all 3 free analyses this month.{% else %}You have {{ remaining }} free analysis left this month.{% endif %}
+      </p>
+      <p class="text-[#52526a] text-xs mt-0.5">Upgrade to Pro for 50/month with a 10-day free trial — no charge until day 11.</p>
+    </div>
+    <a href="{{ url_for('billing.pricing') }}" class="btn-primary text-sm px-4 py-2 whitespace-nowrap">Upgrade now</a>
+  </div>
+  {% endif %}
 
   <!-- Stats -->
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
@@ -25,7 +57,9 @@
     </div>
     <div class="stat-card">
       <div class="text-[#52526a] text-sm mb-1">This Month</div>
-      <div class="font-heading font-bold text-3xl text-[#f1f5f9]">{{ current_user.analyses_used_this_month }}</div>
+      <div class="font-heading font-bold text-3xl text-[#f1f5f9]">
+        {{ used }}{% if not is_unlimited %}<span class="text-[#52526a] text-lg font-normal">/{{ limit }}</span>{% endif %}
+      </div>
     </div>
     <div class="stat-card">
       <div class="text-[#52526a] text-sm mb-1">Best ROI Ever</div>
@@ -57,7 +91,7 @@
             {% if a.status == 'complete' %}
               {% set roi = a.get_roi_value() %}
               <div class="text-right flex-shrink-0 mr-3">
-                <div class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %}">
+                <div class="font-bold {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-green-400{% elif roi >= 0 %}text-amber-400{% else %}text-red-400{% endif %}">
                   {{ "%.0f"|format(roi) }}% ROI
                 </div>
                 <div class="text-xs text-[#52526a]">{{ a.get_arbitrage().get('verdict', '') }}</div>

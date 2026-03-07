@@ -1,12 +1,8 @@
 flask
-flask-limiter
-stripe
 flask-sqlalchemy
-pymysql
 flask-login
 flask-bcrypt
 flask-wtf
-flask-mail
 google-genai
 groq
 duckduckgo-search
@@ -15,4 +11,3 @@ pillow
 requests
 gunicorn
 email-validator
-pytrends

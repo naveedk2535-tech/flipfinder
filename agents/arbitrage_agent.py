@@ -6,34 +6,95 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_arbitrage(pricing_data, sourcing_data):
-    """Calculate arbitrage profit with US platform breakdown."""
+    """Calculate arbitrage profit with full US platform P&L, liquidity score, and hourly rate."""
     try:
-        prompt = f"""You are an expert resale arbitrage calculator. Analyse this market data
-and calculate the complete arbitrage opportunity. All prices are in USD.
+        prompt = f"""You are a professional US resale arbitrage analyst. Calculate the complete opportunity from the data below. Show your working before outputting JSON.
 
-PRICING DATA (what it sells for):
+PRICING DATA (what it sells for in the USA):
 {json.dumps(pricing_data, indent=2)}
 
-SOURCING DATA (what you can buy it for):
+SOURCING DATA (what you can buy it for in the USA):
 {json.dumps(sourcing_data, indent=2)}
 
-Calculate precisely:
-- Best buy price = cheapest_found from sourcing_data (use avg_sold from pricing_data if cheapest_found is 0 or missing)
-- Best sell price = recommended_sell_price from pricing_data. SANITY CHECK: this value must be between min_sold and max_sold from pricing_data. If it exceeds max_sold, cap it at max_sold. If it is 0, use avg_sold instead.
-- Gross profit = sell - buy
-- Platform fees: eBay 13.5%, Depop 10%, Poshmark 20%, StockX 9.5%
-- Net profit after fees for EACH platform (net_profit = gross_profit - fee_amount)
-- shipping_cost_est: estimate realistic US domestic shipping cost based on the product type (shoes/bags ~$12, clothing ~$8, electronics ~$15, jewellery ~$6, default $10)
-- true_net_profit = best platform net_profit - shipping_cost_est (this is what the seller actually pockets)
-- break_even_price = (buy_price + shipping_cost_est) / (1 - best_platform_fee_pct/100) rounded up to 2dp — minimum sell price to not lose money
-- ROI = (true_net_profit / buy_price) * 100 — if buy_price is 0, set ROI to 0
-- Risk: low (price variance <20%), medium (20-50%), high (>50%)
-- Opportunity score 0-100 (combines ROI + confidence + demand)
-- Verdict: "Strong Flip" (ROI>100%), "Decent Flip" (50-100%), "Marginal" (20-50%), "Avoid" (<20% or negative)
-- listing_tips: array of 3-5 specific, actionable tips for listing THIS exact item (mention the right keywords, photos to take, when to list, pricing strategy, platforms to prioritise)
-- IMPORTANT: If sourcing cheapest_found is higher than sell_price, net_profit will be negative — report this accurately with a negative value. Do NOT set everything to 0.
+━━━ STEP 1 — SET BASE PRICES ━━━
+- buy_price = cheapest_found from sourcing_data
+  → If cheapest_found is 0 or missing, use avg_source_price
+  → If both are 0, use avg_sold from pricing_data × 0.55 as a conservative estimate
+- sell_price = recommended_sell_price from pricing_data
+  → SANITY CHECK: must be between min_sold and max_sold. If above max_sold, cap at max_sold. If 0, use avg_sold.
+- gross_profit = sell_price - buy_price
 
-Return ONLY valid JSON (no markdown, no extra text). Fill ALL values with real calculated numbers:
+━━━ STEP 2 — US PLATFORM FEE BREAKDOWN ━━━
+Calculate for each platform using gross_profit and sell_price:
+- eBay:     fee = sell_price × 0.1350  (13.5% final value fee)
+- Depop:    fee = sell_price × 0.1000  (10% fee)
+- Poshmark: fee = sell_price × 0.2000  (20% commission)
+- StockX:   fee = sell_price × 0.0950  (9.5% seller fee)
+net_profit for each platform = gross_profit - platform_fee
+
+━━━ STEP 3 — SHIPPING & TRUE NET ━━━
+Estimate US domestic shipping based on product type (use the product_type in sourcing data if available):
+- Sneakers/shoes: $12–$15
+- Bags/handbags:  $12–$18
+- Clothing:       $6–$10
+- Electronics:    $12–$20
+- Jewellery/watches: $6–$10
+- Default:        $10
+
+best_platform = platform with highest net_profit
+true_net_profit = best_platform net_profit - shipping_cost_est
+break_even_price = (buy_price + shipping_cost_est) / (1 - best_platform_fee_pct/100), rounded up to 2 decimal places
+
+━━━ STEP 4 — ROI & RISK ━━━
+roi_percent = (true_net_profit / buy_price) × 100
+  → If buy_price = 0, set roi_percent = 0
+
+risk_rating:
+- "low"    if price variance (max_sold - min_sold) / avg_sold < 25%
+- "medium" if variance 25–60%
+- "high"   if variance > 60% OR authenticity_risk = "high" in sourcing data
+
+opportunity_score (0–100): combines ROI + confidence + demand_level + sell_velocity
+- Start at 50
+- +20 if roi_percent > 80%
+- +10 if roi_percent 40–80%
+- -10 if roi_percent < 20%
+- +10 if confidence = "high"
+- -10 if confidence = "low"
+- +10 if sell_velocity_days < 10 (fast seller)
+- -10 if sell_velocity_days > 30 (slow seller)
+- Cap at 95, floor at 5
+
+verdict:
+- "Strong Flip"  if roi_percent > 80%
+- "Decent Flip"  if roi_percent 40–80%
+- "Marginal"     if roi_percent 15–40%
+- "Avoid"        if roi_percent < 15% or true_net_profit negative
+
+━━━ STEP 5 — LIQUIDITY & TIME VALUE ━━━
+liquidity_score (1–10): How quickly and reliably will this sell?
+- Use sell_velocity_days from pricing_data if available
+- 1–3 days = score 9–10; 4–7 days = 7–8; 8–14 days = 5–6; 15–30 days = 3–4; 30+ days = 1–2
+
+estimated_time_hrs: realistic total time for this flip (sourcing + photographing + listing + packing + shipping trip)
+- Simple clothing: 1–2 hrs
+- Sneakers/bags: 2–3 hrs
+- Electronics: 2–4 hrs
+- Luxury items: 3–5 hrs
+
+net_hourly_rate = true_net_profit / estimated_time_hrs (round to 2 decimal places)
+
+━━━ STEP 6 — LISTING TIPS ━━━
+Generate 4–5 specific, actionable tips for THIS exact item on US platforms:
+- Which platform to list on first and why
+- Exact keywords to include in the title
+- What photos to take (angles, details buyers check)
+- Pricing strategy (BIN vs auction, price point)
+- Any timing advice (day of week, season)
+- Authentication / trust-building advice if authenticity_risk is high
+
+━━━ OUTPUT ━━━
+Return ONLY valid JSON (no markdown, no extra text). Replace ALL example numbers with your real calculations:
 {{
   "buy_price": 150.00,
   "sell_price": 220.00,
@@ -41,20 +102,23 @@ Return ONLY valid JSON (no markdown, no extra text). Fill ALL values with real c
   "best_platform": "eBay",
   "platform_fee": 29.70,
   "net_profit": 40.30,
-  "shipping_cost_est": 10.00,
-  "true_net_profit": 30.30,
-  "break_even_price": 185.55,
-  "roi_percent": 20.20,
+  "shipping_cost_est": 12.00,
+  "true_net_profit": 28.30,
+  "break_even_price": 188.15,
+  "roi_percent": 18.87,
   "risk_rating": "medium",
   "verdict": "Marginal",
-  "recommendation": "Specific actionable advice here",
-  "opportunity_score": 45,
+  "recommendation": "Specific actionable advice for this exact item — what to do, where to list, what to watch out for",
+  "opportunity_score": 42,
+  "liquidity_score": 6,
+  "estimated_time_hrs": 2.5,
+  "net_hourly_rate": 11.32,
   "listing_tips": [
-    "Use keyword-rich title including brand, model, colourway, and size",
-    "Take photos on a clean white background — show soles, tags, and any wear",
-    "List on eBay with a Buy It Now price and Best Offer enabled to attract more buyers",
-    "Price 5% below the lowest comparable sold listing to sell faster",
-    "Mention original packaging/box in the title if included — adds 15-20% value"
+    "List on eBay first with Buy It Now + Best Offer — highest traffic for this category",
+    "Title must include: brand, exact model name, colorway, size, condition grade",
+    "Photograph: front, back, sole, insole, tongue label, box label, any flaws — buyers need all angles",
+    "Price 3–5% below the lowest comparable sold listing to move quickly",
+    "If condition is Good or above, mention 'no odour, smoke-free home' in description — buyers value this"
   ],
   "platform_breakdown": [
     {{"platform": "eBay",     "fee_pct": 13.5, "fee_amount": 29.70, "net_profit": 40.30, "net_roi": 26.87}},
@@ -64,12 +128,22 @@ Return ONLY valid JSON (no markdown, no extra text). Fill ALL values with real c
   ]
 }}
 
-Replace all example numbers above with your REAL calculations from the sourcing and pricing data provided."""
+IMPORTANT: If sourcing cheapest_found > sell_price, net_profit will be negative — report this accurately. Do NOT set everything to 0."""
 
-        raw = run_with_search(prompt=prompt, use_search=False, max_tokens=2000, fast=True)
+        raw = run_with_search(prompt=prompt, use_search=False, max_tokens=3500, fast=True)
+        logger.info(f"Arbitrage raw response (first 300): {raw[:300]}")
         result = parse_first_json(raw)
         if result:
+            # Ensure new fields exist for backwards compatibility
+            result.setdefault('liquidity_score', 5)
+            result.setdefault('estimated_time_hrs', 2.0)
+            if result.get('true_net_profit') and result.get('estimated_time_hrs'):
+                result.setdefault('net_hourly_rate', round(result['true_net_profit'] / result['estimated_time_hrs'], 2))
+            else:
+                result.setdefault('net_hourly_rate', 0.0)
             return result
+        else:
+            logger.error(f"Arbitrage: no JSON found. Raw: {raw[:500]}")
 
     except Exception as e:
         logger.error(f"Arbitrage agent error: {e}")
@@ -81,11 +155,18 @@ Replace all example numbers above with your REAL calculations from the sourcing 
         "best_platform": "Unknown",
         "platform_fee": 0.00,
         "net_profit": 0.00,
+        "shipping_cost_est": 10.00,
+        "true_net_profit": 0.00,
+        "break_even_price": 0.00,
         "roi_percent": 0.00,
         "risk_rating": "high",
         "verdict": "Avoid",
         "recommendation": "Insufficient data to calculate arbitrage.",
         "opportunity_score": 0,
+        "liquidity_score": 0,
+        "estimated_time_hrs": 0,
+        "net_hourly_rate": 0.00,
+        "listing_tips": [],
         "platform_breakdown": [
             {"platform": "eBay",     "fee_pct": 13.5, "fee_amount": 0, "net_profit": 0, "net_roi": 0},
             {"platform": "Depop",    "fee_pct": 10,   "fee_amount": 0, "net_profit": 0, "net_roi": 0},

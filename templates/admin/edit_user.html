@@ -20,6 +20,10 @@
           <input type="email" name="email" value="{{ user.email }}" required class="input-field w-full">
         </div>
         <div>
+          <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Backup Email <span class="text-[#52526a] font-normal">(password resets sent here too)</span></label>
+          <input type="email" name="backup_email" value="{{ user.backup_email or '' }}" class="input-field w-full" placeholder="backup@example.com">
+        </div>
+        <div>
           <label class="block text-sm font-medium text-[#f1f5f9]/70 mb-1.5">Location</label>
           <input type="text" name="location" value="{{ user.location or '' }}" class="input-field w-full">
         </div>

@@ -54,6 +54,11 @@ def dashboard():
         Visitor.path, func.count(Visitor.id).label('visits')
     ).group_by(Visitor.path).order_by(func.count(Visitor.id).desc()).limit(10).all()
 
+    errors_today = Analysis.query.filter(
+        Analysis.created_at >= today_start,
+        Analysis.status == 'error'
+    ).count()
+
     est_mrr = active_subs * 14.99
 
     return render_template(
@@ -68,7 +73,8 @@ def dashboard():
         recent_signups=recent_signups,
         recent_analyses=recent_analyses,
         top_pages=top_pages,
-        est_mrr=est_mrr
+        est_mrr=est_mrr,
+        errors_today=errors_today
     )
 
 
@@ -122,6 +128,7 @@ def edit_user(id):
     if request.method == 'POST':
         user.name = request.form.get('name', user.name).strip()
         user.email = request.form.get('email', user.email).strip().lower()
+        user.backup_email = request.form.get('backup_email', '').strip().lower() or None
         user.location = request.form.get('location', '').strip()
         user.bio = request.form.get('bio', '').strip()
         user.subscription_tier = request.form.get('subscription_tier', user.subscription_tier)
@@ -182,10 +189,11 @@ def edit_analysis(id):
         analysis.status = request.form.get('status', analysis.status)
         analysis.raw_input = request.form.get('raw_input', analysis.raw_input)
         analysis.error_message = request.form.get('error_message', '')
-        for field in ['extracted_product', 'price_research', 'sourcing_results', 'arbitrage_result']:
+        import json
+        for field in ['extracted_product', 'price_research', 'sourcing_results', 'arbitrage_result',
+                      'trend_data', 'social_data']:
             val = request.form.get(field, '')
             try:
-                import json
                 json.loads(val)
                 setattr(analysis, field, val)
             except (ValueError, TypeError):
@@ -194,6 +202,7 @@ def edit_analysis(id):
                 else:
                     flash(f'Invalid JSON in {field}.', 'danger')
                     return render_template('admin/edit_analysis.html', analysis=analysis)
+        analysis.is_public = request.form.get('is_public') == 'on'
         db.session.commit()
         flash('Analysis updated.', 'success')
         return redirect(url_for('admin.analyses'))
@@ -217,4 +226,24 @@ def visitors():
     pagination = Visitor.query.order_by(Visitor.created_at.desc()).paginate(
         page=page, per_page=50, error_out=False
     )
-    return render_template('admin/visitors.html', pagination=pagination)
+    total = Visitor.query.count()
+    return render_template('admin/visitors.html', pagination=pagination, total=total)
+
+
+@admin_bp.route('/visitors/clear', methods=['POST'])
+@admin_required
+def clear_visitors():
+    keep_days = request.form.get('keep_days', 'all')
+    if keep_days == 'all':
+        deleted = Visitor.query.delete()
+    else:
+        try:
+            days = int(keep_days)
+            cutoff = datetime.utcnow() - timedelta(days=days)
+            deleted = Visitor.query.filter(Visitor.created_at < cutoff).delete()
+        except (ValueError, TypeError):
+            flash('Invalid option.', 'error')
+            return redirect(url_for('admin.visitors'))
+    db.session.commit()
+    flash(f'Deleted {deleted} visitor records.', 'success')
+    return redirect(url_for('admin.visitors'))

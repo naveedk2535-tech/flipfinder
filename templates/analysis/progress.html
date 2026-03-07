@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+{% block title %}Analysing — FlipAFind{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8 sm:py-10">
+
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <div id="header-icon" class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+         style="background: linear-gradient(135deg,#6366f1,#a855f7); box-shadow: 0 0 30px rgba(99,102,241,0.4);">
+      <svg id="header-svg" class="w-8 h-8 text-white" style="animation: lo-spin 3s linear infinite;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+      </svg>
+    </div>
+    <h1 id="page-title" class="font-heading font-bold text-2xl text-gradient">Analysing Your Product</h1>
+    <p id="page-subtitle" class="text-[#52526a] text-sm mt-1">Results appear as each stage completes</p>
+  </div>
+
+  <!-- Timer (prominent, top) -->
+  <div class="text-center mb-8">
+    <div class="inline-flex flex-col items-center gap-1 bg-[#111118] border border-[#252532] rounded-2xl px-8 py-4">
+      <div class="flex items-center gap-2 text-[#52526a] text-xs uppercase tracking-widest font-semibold mb-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Elapsed Time
+      </div>
+      <span id="lo-timer" class="font-mono font-extrabold text-5xl text-gradient tracking-tight">00:00</span>
+      <p class="text-[#52526a] text-xs mt-1.5 max-w-xs text-center leading-relaxed">
+        Searching the web across 15+ resale platforms — usually takes <span class="text-[#f1f5f9]/70">25–45 seconds</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- Stage indicators -->
+  <div class="flex items-center justify-center mb-10 px-2">
+    <div class="flex items-center gap-0 w-full max-w-lg">
+      {% for i, label in [(1,'Identifying'),(2,'Pricing'),(3,'Sourcing'),(4,'Arbitrage')] %}
+      <div class="flex flex-col items-center flex-1">
+        <div class="stage-dot w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 mb-1.5" id="stage-dot-{{ i }}"
+             style="background: #252532; color: #52526a;">{{ i }}</div>
+        <span class="stage-label text-xs text-center leading-tight" id="stage-label-{{ i }}" style="color:#52526a;">{{ label }}</span>
+      </div>
+      {% if i < 4 %}
+      <div class="stage-line flex-1 h-0.5 mb-5 transition-all duration-700" id="stage-line-{{ i }}" style="background:#252532;"></div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Panel 1: Product -->
+  <div id="panel-product" class="card p-5 sm:p-6 mb-4 transition-all duration-500">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="package" class="w-4 h-4 text-indigo-400"></i>
+      </div>
+      <h2 class="font-heading font-bold text-base">Product Identified</h2>
+      <span id="badge-product" class="ml-auto text-xs bg-[#252532] text-[#52526a] px-2 py-0.5 rounded-full">Identifying...</span>
+    </div>
+    <div id="content-product">
+      <div class="space-y-2">
+        <div class="skeleton-line h-5 w-3/4 rounded-lg"></div>
+        <div class="skeleton-line h-4 w-1/2 rounded-lg"></div>
+        <div class="flex gap-2 mt-3">
+          <div class="skeleton-line h-6 w-20 rounded-full"></div>
+          <div class="skeleton-line h-6 w-24 rounded-full"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 2: Market Prices -->
+  <div id="panel-pricing" class="card p-5 sm:p-6 mb-4 transition-all duration-500">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+      </div>
+      <h2 class="font-heading font-bold text-base">Market Prices</h2>
+      <span id="badge-pricing" class="ml-auto text-xs bg-[#252532] text-[#52526a] px-2 py-0.5 rounded-full">Researching...</span>
+    </div>
+    <div id="content-pricing">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="text-center"><div class="skeleton-line h-4 w-full rounded mb-1"></div><div class="skeleton-line h-7 w-3/4 mx-auto rounded"></div></div>
+        <div class="text-center"><div class="skeleton-line h-4 w-full rounded mb-1"></div><div class="skeleton-line h-7 w-3/4 mx-auto rounded"></div></div>
+        <div class="text-center"><div class="skeleton-line h-4 w-full rounded mb-1"></div><div class="skeleton-line h-7 w-3/4 mx-auto rounded"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 3: Sourcing -->
+  <div id="panel-sourcing" class="card p-5 sm:p-6 mb-4 transition-all duration-500">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="shopping-bag" class="w-4 h-4 text-amber-400"></i>
+      </div>
+      <h2 class="font-heading font-bold text-base">Sourcing Deals</h2>
+      <span id="badge-sourcing" class="ml-auto text-xs bg-[#252532] text-[#52526a] px-2 py-0.5 rounded-full">Finding deals...</span>
+    </div>
+    <div id="content-sourcing">
+      <div class="space-y-2">
+        <div class="skeleton-line h-12 w-full rounded-xl"></div>
+        <div class="skeleton-line h-12 w-full rounded-xl"></div>
+        <div class="skeleton-line h-12 w-full rounded-xl"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 4: Arbitrage -->
+  <div id="panel-arbitrage" class="card p-5 sm:p-6 mb-6 transition-all duration-500">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="zap" class="w-4 h-4 text-purple-400"></i>
+      </div>
+      <h2 class="font-heading font-bold text-base">Arbitrage Score</h2>
+      <span id="badge-arbitrage" class="ml-auto text-xs bg-[#252532] text-[#52526a] px-2 py-0.5 rounded-full">Calculating...</span>
+    </div>
+    <div id="content-arbitrage">
+      <div class="flex items-center gap-6">
+        <div class="skeleton-line h-20 w-32 rounded-xl"></div>
+        <div class="flex-1 space-y-2">
+          <div class="skeleton-line h-5 w-full rounded"></div>
+          <div class="skeleton-line h-4 w-3/4 rounded"></div>
+          <div class="skeleton-line h-4 w-1/2 rounded"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complete / Error actions -->
+  <div id="complete-actions" class="hidden text-center">
+    <div class="mb-4">
+      <div class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="check-circle" class="w-6 h-6 text-emerald-400"></i>
+      </div>
+      <p class="text-[#f1f5f9]/70 text-sm mb-4">Analysis complete! Opening full results in <span id="countdown">3</span>s…</p>
+    </div>
+    <a id="full-results-link" href="{{ url_for('analysis.results', id=analysis.id) }}"
+       class="btn-primary px-8 py-3 text-base">
+      <i data-lucide="bar-chart-2" class="w-4 h-4 mr-2 inline"></i>
+      View Full Analysis
+    </a>
+  </div>
+
+  <div id="error-actions" class="hidden text-center">
+    <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-3">
+      <i data-lucide="alert-circle" class="w-6 h-6 text-red-400"></i>
+    </div>
+    <p id="error-msg" class="text-red-400 text-sm mb-4">Analysis failed.</p>
+    <a href="{{ url_for('analysis.input_page') }}" class="btn-primary px-6 py-3">Try Again</a>
+  </div>
+
+</div>
+
+<style>
+  @keyframes lo-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .skeleton-line { background: linear-gradient(90deg, #1a1a2e 25%, #252532 50%, #1a1a2e 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .panel-revealed { animation: fadeSlideIn 0.5s ease forwards; }
+  @keyframes fadeSlideIn { from { opacity: 0.4; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .stage-dot-active { background: #6366f1 !important; color: white !important; box-shadow: 0 0 12px rgba(99,102,241,0.6); }
+  .stage-dot-done { background: #22c55e !important; color: white !important; }
+  .stage-line-done { background: #22c55e !important; }
+  .verdict-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.2rem 0.6rem; border-radius: 9999px; text-transform: uppercase; }
+  .verdict-great-flip, .verdict-strong-flip { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+  .verdict-decent-flip, .verdict-ok-flip, .verdict-moderate { background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+  .verdict-avoid, .verdict-poor-flip, .verdict-loss { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+</style>
+
+<script>
+const STATUS_URL = "{{ url_for('analysis.status', id=analysis.id) }}";
+const RESULTS_URL = "{{ url_for('analysis.results', id=analysis.id) }}";
+
+let pollInterval;
+let revealed = { product: false, pricing: false, sourcing: false, arbitrage: false };
+
+function fmt(n) { return n != null ? '$' + parseFloat(n).toFixed(0) : '—'; }
+function fmtD(n) { return n != null ? '$' + parseFloat(n).toFixed(2) : '—'; }
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// Stage dot helpers
+function setStageActive(n) {
+  const dot = document.getElementById('stage-dot-' + n);
+  if (dot) { dot.className = dot.className.replace(/stage-dot-\w+/g, ''); dot.classList.add('stage-dot-active'); dot.innerHTML = '<span style="display:block;width:8px;height:8px;background:white;border-radius:50%;animation:lo-pulse 1s ease-in-out infinite;margin:auto;"></span>'; document.getElementById('stage-label-' + n).style.color = '#a5b4fc'; }
+}
+function setStageDown(n) {
+  const dot = document.getElementById('stage-dot-' + n);
+  if (dot) { dot.classList.add('stage-dot-done'); dot.innerHTML = '<svg style="width:14px;height:14px;fill:none;stroke:white;display:block;margin:auto;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>'; document.getElementById('stage-label-' + n).style.color = '#4ade80'; }
+  const line = document.getElementById('stage-line-' + n);
+  if (line) line.classList.add('stage-line-done');
+}
+function setBadgeDone(id, text) {
+  const el = document.getElementById('badge-' + id);
+  if (el) { el.textContent = text; el.style.background = 'rgba(34,197,94,0.15)'; el.style.color = '#4ade80'; el.style.border = '1px solid rgba(34,197,94,0.3)'; }
+}
+
+// Panel reveal helpers
+function revealPanel(id) {
+  const p = document.getElementById('panel-' + id);
+  if (p) p.classList.add('panel-revealed');
+}
+
+function revealProduct(d) {
+  if (revealed.product) return;
+  revealed.product = true;
+  setStageDown(1); setStageActive(2); setStageActive(3);
+  setBadgeDone('product', 'Identified');
+
+  const name = [d.brand, d.product_type, d.model].filter(Boolean).join(' ') || 'Unknown Product';
+  const dl = (d.demand_level || 'medium').toLowerCase();
+  const dlColor = dl === 'high' ? 'text-emerald-400 bg-emerald-500/20 border-emerald-500/30' : dl === 'low' ? 'text-red-400 bg-red-500/20 border-red-500/30' : 'text-[#52526a] bg-[#252532] border-[#252532]';
+  const limited = d.limited_edition ? '<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Limited Edition</span>' : '';
+
+  const details = [['Condition', d.condition], ['Size', d.size], ['Era', d.era], ['Materials', d.materials]]
+    .filter(([,v]) => v)
+    .map(([k,v]) => `<div><div class="text-[#52526a] text-xs uppercase tracking-wider mb-0.5">${esc(k)}</div><div class="text-[#f1f5f9] font-medium text-sm">${esc(v)}</div></div>`)
+    .join('');
+
+  const tags = (d.style_descriptors || []).slice(0, 4)
+    .map(t => `<span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2.5 py-1 rounded-full text-xs">${esc(t)}</span>`)
+    .join('');
+
+  document.getElementById('content-product').innerHTML = `
+    <div class="flex flex-wrap items-start gap-2 mb-3">
+      <h3 class="font-heading font-bold text-lg flex-1">${esc(name)}</h3>
+      <span class="text-xs font-bold px-2 py-0.5 rounded-full border ${dlColor}">${(dl.charAt(0).toUpperCase()+dl.slice(1))} Demand</span>
+      ${limited}
+    </div>
+    ${details ? `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">${details}</div>` : ''}
+    ${tags ? `<div class="flex flex-wrap gap-2">${tags}</div>` : ''}
+  `;
+  revealPanel('product');
+}
+
+function revealPricing(d, extracted) {
+  if (revealed.pricing) return;
+  revealed.pricing = true;
+  setStageDown(2); setBadgeDone('pricing', 'Done');
+
+  const avg = parseFloat(d.avg_sold || 0);
+  const min = parseFloat(d.min_sold || 0);
+  const max = parseFloat(d.max_sold || 0);
+  const rec = parseFloat(d.recommended_sell_price || avg);
+  const sources = (d.sources || []).slice(0, 3);
+  const srcHtml = sources.map(s => `
+    <div class="flex items-center justify-between bg-[#111118] rounded-lg px-3 py-2 text-sm">
+      <div class="flex-1 min-w-0">
+        <div class="font-medium text-[#f1f5f9] truncate">${esc(s.title || '—')}</div>
+        <div class="text-[#52526a] text-xs">${esc(s.platform || '')} · ${esc(s.date || '')}</div>
+      </div>
+      <span class="font-bold text-emerald-400 ml-3">${fmt(s.price)}</span>
+    </div>`).join('');
+
+  const sq = encodeURIComponent((extracted && extracted.search_query) || '');
+  const links = `<div class="flex flex-wrap gap-2 mt-3">
+    <a href="https://www.ebay.com/sch/i.html?_nkw=${sq}&LH_Sold=1&LH_Complete=1" target="_blank" class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/70 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">eBay Sold</a>
+    <a href="https://poshmark.com/search?query=${sq}" target="_blank" class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/70 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">Poshmark</a>
+    <a href="https://stockx.com/search?s=${sq}" target="_blank" class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/70 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">StockX</a>
+    <a href="https://www.depop.com/search/?q=${sq}" target="_blank" class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/70 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">Depop</a>
+  </div>`;
+
+  document.getElementById('content-pricing').innerHTML = `
+    <div class="grid grid-cols-3 gap-4 mb-4">
+      <div class="text-center"><div class="text-[#52526a] text-xs mb-1">Min Sold</div><div class="font-bold text-xl text-[#f1f5f9]">${fmt(min)}</div></div>
+      <div class="text-center"><div class="text-[#52526a] text-xs mb-1">Avg Sold</div><div class="font-bold text-xl text-indigo-400">${fmt(avg)}</div></div>
+      <div class="text-center"><div class="text-[#52526a] text-xs mb-1">Max Sold</div><div class="font-bold text-xl text-[#f1f5f9]">${fmt(max)}</div></div>
+    </div>
+    <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 text-center mb-4">
+      <div class="text-[#52526a] text-xs mb-0.5">Recommended Sell Price</div>
+      <div class="font-heading font-extrabold text-2xl text-indigo-400">${fmtD(rec)}</div>
+    </div>
+    ${srcHtml ? `<div class="space-y-2 mb-2">${srcHtml}</div>` : ''}
+    ${links}
+  `;
+  revealPanel('pricing');
+}
+
+function revealSourcing(d, extracted) {
+  if (revealed.sourcing) return;
+  revealed.sourcing = true;
+  setStageDown(3); setBadgeDone('sourcing', 'Done');
+
+  const deals = (d.best_deals || []).slice(0, 4);
+  const sq = encodeURIComponent((extracted && extracted.search_query) || '');
+  const platformUrls = { ebay: 'https://www.ebay.com/sch/i.html?_nkw=', poshmark: 'https://poshmark.com/search?query=', depop: 'https://www.depop.com/search/?q=', mercari: 'https://www.mercari.com/search/?keyword=', stockx: 'https://stockx.com/search?s=', goat: 'https://www.goat.com/search?query=' };
+
+  const dealsHtml = deals.map(d => {
+    const base = platformUrls[(d.platform || '').toLowerCase()] || 'https://www.ebay.com/sch/i.html?_nkw=';
+    const url = base + encodeURIComponent(d.title || sq);
+    return `<div class="flex items-center justify-between bg-[#111118] rounded-xl px-4 py-3 text-sm">
+      <div class="flex-1 min-w-0">
+        <div class="font-medium text-[#f1f5f9] truncate">${esc(d.title || '—')}</div>
+        <div class="text-[#52526a] text-xs">${esc(d.platform || '')} · ${esc(d.condition || '')}</div>
+      </div>
+      <div class="flex items-center gap-3 flex-shrink-0 ml-3">
+        <span class="font-bold text-emerald-400">${fmt(d.price)}</span>
+        <a href="${url}" target="_blank" class="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-500 transition-colors">Find</a>
+      </div>
+    </div>`;
+  }).join('');
+
+  const cheapest = parseFloat(d.cheapest_found || 0);
+  document.getElementById('content-sourcing').innerHTML = `
+    ${cheapest > 0 ? `<div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-center mb-4">
+      <div class="text-[#52526a] text-xs mb-0.5">Cheapest Found</div>
+      <div class="font-heading font-extrabold text-2xl text-emerald-400">${fmt(cheapest)}</div>
+    </div>` : ''}
+    ${dealsHtml ? `<div class="space-y-2">${dealsHtml}</div>` : '<p class="text-[#52526a] text-sm">No deals found for this item.</p>'}
+  `;
+  revealPanel('sourcing');
+}
+
+function revealArbitrage(d) {
+  if (revealed.arbitrage) return;
+  revealed.arbitrage = true;
+  setStageDown(4); setBadgeDone('arbitrage', 'Done');
+
+  const roi = parseFloat(d.roi_percent || 0);
+  const roiColor = roi >= 100 ? 'text-emerald-400' : roi >= 50 ? 'text-amber-400' : 'text-red-400';
+  const verdict = (d.verdict || 'avoid').toLowerCase().replace(/\s+/g, '_');
+  const opportunity = parseInt(d.opportunity_score || 0);
+
+  document.getElementById('content-arbitrage').innerHTML = `
+    <div class="flex flex-col sm:flex-row sm:items-center gap-5 mb-5">
+      <div class="text-center sm:text-left">
+        <div class="text-[#52526a] text-xs mb-1">Return on Investment</div>
+        <div class="font-heading font-extrabold text-6xl ${roiColor}">${Math.round(roi)}%</div>
+        <div class="mt-2"><span class="verdict-badge verdict-${verdict}">${d.verdict || '—'}</span></div>
+      </div>
+      <div class="flex-1 grid grid-cols-2 gap-3">
+        <div class="bg-[#111118] rounded-xl p-3 text-center">
+          <div class="text-[#52526a] text-xs mb-0.5">Buy At</div>
+          <div class="font-bold text-lg text-[#f1f5f9]">${fmt(d.buy_price)}</div>
+        </div>
+        <div class="bg-[#111118] rounded-xl p-3 text-center">
+          <div class="text-[#52526a] text-xs mb-0.5">Sell At</div>
+          <div class="font-bold text-lg text-[#f1f5f9]">${fmt(d.sell_price)}</div>
+        </div>
+        <div class="bg-[#111118] rounded-xl p-3 text-center">
+          <div class="text-[#52526a] text-xs mb-0.5">Net Profit</div>
+          <div class="font-bold text-lg ${parseFloat(d.net_profit||0)>0?'text-emerald-400':'text-red-400'}">${fmtD(d.net_profit)}</div>
+        </div>
+        <div class="bg-[#111118] rounded-xl p-3 text-center">
+          <div class="text-[#52526a] text-xs mb-0.5">Best Platform</div>
+          <div class="font-bold text-lg text-indigo-400">${esc(d.best_platform || '—')}</div>
+        </div>
+      </div>
+    </div>
+    ${d.recommendation ? `<p class="text-[#f1f5f9]/60 text-sm mb-4">${esc(d.recommendation)}</p>` : ''}
+    <div class="flex justify-between text-sm mb-1.5">
+      <span class="text-[#52526a]">Opportunity Score</span>
+      <span class="font-bold text-[#f1f5f9]">${opportunity}/100</span>
+    </div>
+    <div class="bg-[#111118] rounded-full h-2.5 overflow-hidden">
+      <div id="opp-bar" class="h-2.5 rounded-full" style="background: linear-gradient(90deg,#6366f1,#a855f7); width:0%; transition: width 1s ease;"></div>
+    </div>
+  `;
+  revealPanel('arbitrage');
+  setTimeout(() => { const b = document.getElementById('opp-bar'); if (b) b.style.width = opportunity + '%'; }, 200);
+}
+
+function showComplete() {
+  // Stop spinning icon, show check
+  const icon = document.getElementById('header-svg');
+  if (icon) { icon.style.animation = 'none'; icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'; }
+  document.getElementById('page-title').textContent = 'Analysis Complete';
+  document.getElementById('page-subtitle').textContent = 'Opening full results shortly…';
+  document.getElementById('complete-actions').classList.remove('hidden');
+  lucide.createIcons();
+
+  let c = 3;
+  const countEl = document.getElementById('countdown');
+  const timer = setInterval(() => {
+    c--;
+    if (countEl) countEl.textContent = c;
+    if (c <= 0) { clearInterval(timer); window.location.href = RESULTS_URL; }
+  }, 1000);
+}
+
+function showError(msg) {
+  clearInterval(pollInterval);
+  clearInterval(timerTick);
+  document.getElementById('page-title').textContent = 'Analysis Failed';
+  document.getElementById('page-subtitle').textContent = '';
+  document.getElementById('error-msg').textContent = msg || 'An unexpected error occurred.';
+  document.getElementById('error-actions').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+async function poll() {
+  try {
+    const resp = await fetch(STATUS_URL);
+    if (!resp.ok) return;
+    const data = await resp.json();
+
+    if (data.extracted_product && !revealed.product) revealProduct(data.extracted_product);
+    if (data.price_research && !revealed.pricing) revealPricing(data.price_research, data.extracted_product);
+    if (data.sourcing_results && !revealed.sourcing) revealSourcing(data.sourcing_results, data.extracted_product);
+    if (data.arbitrage_result && !revealed.arbitrage) revealArbitrage(data.arbitrage_result);
+
+    if (data.status === 'complete') {
+      clearInterval(pollInterval);
+      clearInterval(timerTick);
+      showComplete();
+    } else if (data.status === 'error') {
+      showError(data.error_message);
+    }
+  } catch (e) {
+    // network blip — keep polling
+  }
+}
+
+// Set initial stage 1 active
+setStageActive(1);
+
+// Timer
+let elapsed = 0;
+const timerEl = document.getElementById('lo-timer');
+const timerTick = setInterval(() => {
+  elapsed++;
+  timerEl.textContent = String(Math.floor(elapsed / 60)).padStart(2, '0') + ':' + String(elapsed % 60).padStart(2, '0');
+}, 1000);
+
+pollInterval = setInterval(poll, 2000);
+poll(); // immediate first call
+</script>
+
+<style>
+@keyframes lo-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.7; } }
+</style>
+{% endblock %}

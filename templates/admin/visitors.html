@@ -3,9 +3,35 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-10">
   <div class="flex items-center justify-between mb-6">
-    <h1 class="font-heading font-bold text-2xl text-gradient">Visitor Log</h1>
-    <a href="{{ url_for('admin.dashboard') }}" class="text-sm text-indigo-400 hover:underline">← Dashboard</a>
+    <div>
+      <h1 class="font-heading font-bold text-2xl text-gradient">Visitor Log</h1>
+      <p class="text-[#52526a] text-sm mt-1">{{ total }} total records</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Clear log form -->
+      <form method="POST" action="{{ url_for('admin.clear_visitors') }}"
+            onsubmit="return confirm('Delete visitor records? This cannot be undone.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="keep_days" class="input-field text-sm py-1.5 px-3 mr-2">
+          <option value="7">Keep last 7 days</option>
+          <option value="30">Keep last 30 days</option>
+          <option value="all">Delete all</option>
+        </select>
+        <button type="submit" class="px-3 py-1.5 rounded-lg text-sm bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors">
+          Clear Log
+        </button>
+      </form>
+      <a href="{{ url_for('admin.dashboard') }}" class="text-sm text-indigo-400 hover:underline">← Dashboard</a>
+    </div>
   </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="mb-4 px-4 py-3 rounded-lg text-sm {{ 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' if category == 'success' else 'bg-red-500/20 text-red-400 border border-red-500/30' }}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endwith %}
 
   <div class="card overflow-x-auto">
     <table class="w-full text-sm">

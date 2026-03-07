@@ -2,19 +2,16 @@ import os
 import uuid
 import base64
 import json
-import io
 from threading import Thread
-from PIL import Image as PilImage
 from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, jsonify
 from flask_login import login_required, current_user
-from app import db, limiter
+from app import db
 from models.analysis import Analysis
 from agents.extraction_agent import extract_product_details
 from agents.pricing_agent import research_prices
 from agents.sourcing_agent import find_sourcing_deals
 from agents.arbitrage_agent import calculate_arbitrage
-from agents.trends_agent import get_trend_data, get_social_data
 
 analysis_bp = Blueprint('analysis', __name__, url_prefix='/analyse')
 
@@ -43,14 +40,10 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
 
             search_query = extracted.get('search_query', text_input or 'product')
 
-            # When a URL was submitted, the listing price on that page IS the buy price.
-            # Pass it through so the sourcing agent anchors cheapest_found to the real price.
-            input_price = float(extracted.get('listing_price', 0) or 0) if has_link else 0
-
             # Agents 2 & 3: Pricing + Sourcing in parallel
             with ThreadPoolExecutor(max_workers=2) as executor:
                 future_pricing = executor.submit(research_prices, search_query, extracted)
-                future_sourcing = executor.submit(find_sourcing_deals, search_query, 0, extracted, input_price)
+                future_sourcing = executor.submit(find_sourcing_deals, search_query, 0, extracted)
                 pricing = future_pricing.result()
                 sourcing = future_sourcing.result()
 
@@ -60,23 +53,7 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
 
             # Agent 4: Arbitrage
             arbitrage = calculate_arbitrage(pricing, sourcing)
-            # Tag whether ROI is based on a real listing price or an AI estimate
-            has_real_price = (input_price > 0) or (sourcing.get('cheapest_found', 0) > 0)
-            arbitrage['roi_data_source'] = 'real' if has_real_price else 'estimated'
             analysis.arbitrage_result = json.dumps(arbitrage)
-
-            # Trends + Social in parallel (non-blocking — failures are silent)
-            with ThreadPoolExecutor(max_workers=2) as executor:
-                future_trend = executor.submit(get_trend_data, search_query)
-                future_social = executor.submit(get_social_data, search_query)
-                trend = future_trend.result()
-                social = future_social.result()
-
-            if trend:
-                analysis.trend_data = json.dumps(trend)
-            if social:
-                analysis.social_data = json.dumps(social)
-
             analysis.status = 'complete'
 
             from models.user import User
@@ -107,10 +84,7 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
 
 @analysis_bp.route('/submit', methods=['POST'])
 @login_required
-@limiter.limit("10 per hour")
 def submit():
-    # Reset monthly counter if we've rolled into a new month
-    current_user.reset_monthly_if_needed()
     if not current_user.can_analyse():
         flash('Analysis limit reached. Please upgrade your plan.', 'warning')
         return redirect(url_for('billing.pricing'))
@@ -145,14 +119,6 @@ def submit():
         image_file.save(image_path)
         with open(image_path, 'rb') as f:
             image_bytes = f.read()
-        # Validate that the file is actually an image (MIME check via Pillow)
-        try:
-            img = PilImage.open(io.BytesIO(image_bytes))
-            img.verify()
-        except Exception:
-            os.remove(image_path)
-            flash('Invalid image file. Please upload a real JPG, PNG, or WebP.', 'danger')
-            return redirect(url_for('analysis.input_page'))
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         media_map = {'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'webp': 'image/webp'}
         image_media_type = media_map.get(ext, 'image/jpeg')
@@ -223,25 +189,3 @@ def results(id):
         flash('Access denied.', 'danger')
         return redirect(url_for('dashboard.home'))
     return render_template('analysis/results.html', analysis=analysis)
-
-
-@analysis_bp.route('/public/<int:id>')
-def public_results(id):
-    """View a shared analysis without login."""
-    analysis = Analysis.query.get_or_404(id)
-    if not analysis.is_public:
-        flash('This analysis is not publicly shared.', 'warning')
-        return redirect(url_for('auth.landing'))
-    return render_template('analysis/results.html', analysis=analysis, public_view=True)
-
-
-@analysis_bp.route('/<int:id>/toggle_public', methods=['POST'])
-@login_required
-def toggle_public(id):
-    analysis = Analysis.query.get_or_404(id)
-    if analysis.user_id != current_user.id:
-        return jsonify({'error': 'Access denied'}), 403
-    analysis.is_public = not analysis.is_public
-    db.session.commit()
-    public_url = url_for('analysis.public_results', id=id, _external=True) if analysis.is_public else None
-    return jsonify({'is_public': analysis.is_public, 'public_url': public_url})

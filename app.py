@@ -1,8 +1,15 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
 from flask_wtf.csrf import CSRFProtect
+from flask_mail import Mail
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    _limiter_available = True
+except ImportError:
+    _limiter_available = False
 from config import Config
 import os
 from datetime import datetime
@@ -11,6 +18,19 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 bcrypt = Bcrypt()
 csrf = CSRFProtect()
+mail = Mail()
+
+if _limiter_available:
+    limiter = Limiter(key_func=get_remote_address, default_limits=[])
+else:
+    import logging
+    logging.getLogger(__name__).warning("flask-limiter not installed — rate limiting disabled")
+    class _NoOpLimiter:
+        def init_app(self, app): pass
+        def limit(self, *a, **kw):
+            def decorator(f): return f
+            return decorator
+    limiter = _NoOpLimiter()
 
 
 def create_app():
@@ -19,10 +39,27 @@ def create_app():
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+    # Mail config
+    app.config['MAIL_SERVER']         = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT']           = int(os.environ.get('MAIL_PORT', 587))
+    app.config['MAIL_USE_TLS']        = True
+    app.config['MAIL_USERNAME']       = os.environ.get('MAIL_USERNAME', 'hello@zzi.ai')
+    app.config['MAIL_PASSWORD']       = os.environ.get('MAIL_PASSWORD', '')
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'FlipAFind <hello@zzi.ai>')
+
     db.init_app(app)
     login_manager.init_app(app)
     bcrypt.init_app(app)
     csrf.init_app(app)
+    mail.init_app(app)
+    limiter.init_app(app)
+
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        from flask import request as req, flash as fls, redirect as redir, url_for as ufl
+        fls(f'Too many attempts. Please wait and try again.', 'danger')
+        # Redirect back to the referring page or home
+        return redir(req.referrer or ufl('auth.landing'))
 
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
@@ -70,24 +107,82 @@ def create_app():
     with app.app_context():
         db.create_all()
         # SQLite migration: add new columns if missing
+        from sqlalchemy import text
+        _migrations = [
+            "ALTER TABLE users ADD COLUMN tokens_used_this_month INTEGER DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN reset_token TEXT",
+            "ALTER TABLE users ADD COLUMN reset_token_expires DATETIME",
+            "ALTER TABLE analyses ADD COLUMN trend_data TEXT",
+            "ALTER TABLE analyses ADD COLUMN social_data TEXT",
+            "ALTER TABLE analyses ADD COLUMN is_public INTEGER DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN backup_email VARCHAR(255)",
+        ]
+        with db.engine.connect() as conn:
+            for sql in _migrations:
+                try:
+                    conn.execute(text(sql))
+                    conn.commit()
+                except Exception:
+                    pass  # Column already exists
+
+        # Mark all existing users as verified so they aren't locked out
         try:
-            from sqlalchemy import text
             with db.engine.connect() as conn:
-                conn.execute(text("ALTER TABLE users ADD COLUMN tokens_used_this_month INTEGER DEFAULT 0"))
+                conn.execute(text("UPDATE users SET email_verified = 1 WHERE email_verified IS NULL OR email_verified = 0"))
                 conn.commit()
         except Exception:
-            pass  # Column already exists
-        # Bootstrap admin from env var
+            pass
+        # Bootstrap admin from env var (upsert: create if missing, update if exists)
         admin_email = os.environ.get('BOOTSTRAP_ADMIN_EMAIL', '').strip().lower()
+        admin_pw    = os.environ.get('BOOTSTRAP_ADMIN_PASSWORD', '').strip()
         if admin_email:
             try:
                 from models.user import User
                 u = User.query.filter_by(email=admin_email).first()
-                if u and not u.is_admin:
+                if not u:
+                    u = User(
+                        name='Admin',
+                        email=admin_email,
+                        email_verified=True,
+                        is_admin=True,
+                        is_active_account=True,
+                        subscription_tier='premium',
+                        subscription_status='active',
+                    )
+                    u.set_password(admin_pw or 'changeme123')
+                    db.session.add(u)
+                else:
                     u.is_admin = True
-                    db.session.commit()
+                    u.is_active_account = True
+                    u.email_verified = True
+                    if admin_pw:
+                        u.set_password(admin_pw)
+                db.session.commit()
             except Exception:
                 pass
+
+        # Seed default accounts (admin2 + tester) — only created once, never overwritten
+        try:
+            from models.user import User
+            _seed = [
+                dict(name='Admin 2', email='admin2@flipafind.com',   password='FlipAdmin2!',   is_admin=True,  tier='premium'),
+                dict(name='Tester',  email='tester@flipafind.com',   password='FlipTest123!',  is_admin=False, tier='premium'),
+            ]
+            for s in _seed:
+                if not User.query.filter_by(email=s['email']).first():
+                    nu = User(
+                        name=s['name'], email=s['email'],
+                        email_verified=True, is_active_account=True,
+                        is_admin=s['is_admin'],
+                        subscription_tier=s['tier'],
+                        subscription_status='active',
+                    )
+                    nu.set_password(s['password'])
+                    db.session.add(nu)
+            db.session.commit()
+        except Exception:
+            pass
 
     return app
 

@@ -26,10 +26,6 @@ class User(UserMixin, db.Model):
     tokens_used_this_month = db.Column(db.Integer, default=0)
     is_admin = db.Column(db.Boolean, default=False)
     is_active_account = db.Column(db.Boolean, default=True)
-    email_verified = db.Column(db.Boolean, default=False)
-    backup_email = db.Column(db.String(255), nullable=True)
-    reset_token = db.Column(db.String(255), nullable=True)
-    reset_token_expires = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
     last_reset_date = db.Column(db.DateTime, default=datetime.utcnow)
@@ -43,21 +39,10 @@ class User(UserMixin, db.Model):
         return bcrypt.check_password_hash(self.password_hash, password)
 
     def can_analyse(self):
-        # Admins and premium users always have access
-        if self.is_admin or self.subscription_tier == 'premium':
-            return True
-        # Pro users: 50/month while subscription is active or trialing
-        if self.subscription_tier == 'pro' and self.subscription_status in ('active', 'trialing'):
-            return self.analyses_used_this_month < 50
-        # Free tier: 3/month
-        return self.analyses_used_this_month < 3
+        return True
 
     def get_monthly_limit(self):
-        if self.is_admin or self.subscription_tier == 'premium':
-            return 999999
-        if self.subscription_tier == 'pro':
-            return 50
-        return 3
+        return 999999
 
     def reset_monthly_if_needed(self):
         now = datetime.utcnow()

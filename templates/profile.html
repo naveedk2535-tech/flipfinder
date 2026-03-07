@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Profile — FlipFinder{% endblock %}
+{% block title %}Profile — FlipAFind{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-10">
   <h1 class="font-heading font-bold text-2xl text-gradient mb-8">Your Profile</h1>
@@ -12,10 +12,64 @@
     <div>
       <div class="font-heading font-bold text-lg">{{ current_user.name }}</div>
       <div class="text-[#52526a] text-sm">{{ current_user.email }}</div>
-      <span class="inline-block mt-1 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs px-2 py-0.5 rounded-full font-medium">
-        {{ current_user.subscription_tier | capitalize }}
+      {% set tier = current_user.subscription_tier %}
+      <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium
+        {% if current_user.is_admin %}bg-purple-500/20 text-purple-400 border border-purple-500/30
+        {% elif tier == 'premium' %}bg-purple-500/20 text-purple-400 border border-purple-500/30
+        {% elif tier == 'pro' %}bg-indigo-500/20 text-indigo-400 border border-indigo-500/30
+        {% else %}bg-[#1a1a2e] text-[#f1f5f9]/50 border border-[#2a2a3e]{% endif %}">
+        {% if current_user.is_admin %}Admin{% else %}{{ tier | capitalize }}{% endif %}
       </span>
     </div>
+  </div>
+
+  <!-- Subscription -->
+  <div class="card p-6 mb-6">
+    <h2 class="font-heading font-semibold text-lg mb-5">Subscription</h2>
+    {% set tier = current_user.subscription_tier %}
+    {% set limit = current_user.get_monthly_limit() %}
+    {% set used  = current_user.analyses_used_this_month %}
+    {% set is_unlimited = (current_user.is_admin or tier == 'premium') %}
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+      <div>
+        <div class="text-sm text-[#52526a] mb-1">Current plan</div>
+        <div class="font-semibold text-lg">
+          {% if current_user.is_admin %}Admin (Unlimited)
+          {% elif tier == 'premium' %}Premium — Unlimited analyses
+          {% elif tier == 'pro' %}Pro — 50 analyses/month
+          {% else %}Free — 3 analyses/month{% endif %}
+        </div>
+        {% if current_user.subscription_status == 'trialing' %}
+          <div class="text-xs text-emerald-400 mt-1">✓ Free trial active — no charge yet</div>
+        {% elif current_user.subscription_status == 'past_due' %}
+          <div class="text-xs text-red-400 mt-1">⚠ Payment past due — please update billing</div>
+        {% endif %}
+        <div class="text-sm text-[#52526a] mt-2">
+          Used this month:
+          <span class="text-[#f1f5f9] font-medium">{{ used }}{% if not is_unlimited %}/{{ limit }}{% endif %}</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        {% if not current_user.is_admin %}
+          {% if tier == 'free' %}
+            <a href="{{ url_for('billing.pricing') }}" class="btn-primary text-sm px-5 py-2 text-center">Upgrade Plan</a>
+          {% else %}
+            <a href="{{ url_for('billing.portal') }}" class="btn-outline text-sm px-5 py-2 text-center">Manage Billing</a>
+            <a href="{{ url_for('billing.pricing') }}" class="text-xs text-indigo-400 hover:underline text-center">Change plan</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    {% if tier == 'free' and not current_user.is_admin %}
+    <div class="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-4 mt-2">
+      <p class="text-sm text-[#f1f5f9]/80 font-medium mb-1">Upgrade to Pro for more</p>
+      <p class="text-xs text-[#52526a] mb-3">50 analyses/month, all platforms, trend & social data. Start with a 10-day free trial.</p>
+      <a href="{{ url_for('billing.pricing') }}" class="btn-primary text-xs px-4 py-1.5">See plans →</a>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Edit form -->

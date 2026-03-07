@@ -39,64 +39,22 @@
 
   <!-- Complete State -->
   {% elif analysis.status == "complete" %}
-  <input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
   {% set arb = analysis.get_arbitrage() %}
   {% set pricing = analysis.get_pricing() %}
   {% set sourcing = analysis.get_sourcing() %}
   {% set extracted = analysis.get_extracted() %}
   {% set roi = analysis.get_roi_value() %}
-  {% set trend = analysis.get_trend() %}
-  {% set social = analysis.get_social() %}
-  {# Compute best alternative price from sourcing deals (separate from URL buy price) #}
-  {% set url_is_source = sourcing.get("url_is_source", false) %}
-  {% set best_alt_price = namespace(val=0, platform="") %}
-  {% if sourcing.get("best_deals") %}
-    {% for d in sourcing.best_deals %}
-      {% if d.get("price", 0) > 0 %}
-        {% if best_alt_price.val == 0 or d.price < best_alt_price.val %}
-          {% set best_alt_price.val = d.price %}
-          {% set best_alt_price.platform = d.get("platform","") %}
-        {% endif %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-
-  <!-- Share bar (only for the analysis owner, not public view) -->
-  {% if not public_view|default(false) %}
-  <div class="flex items-center justify-between mb-4 px-1">
-    <p class="text-[#52526a] text-xs">{{ analysis.created_at.strftime('%d %b %Y · %H:%M') }}</p>
-    <button id="share-btn" onclick="toggleShare({{ analysis.id }})"
-      class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all duration-200
-             {% if analysis.is_public %}bg-emerald-500/15 border-emerald-500/30 text-emerald-400{% else %}bg-[#111118] border-[#252532] text-[#52526a] hover:border-indigo-500/50 hover:text-indigo-400{% endif %}">
-      <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
-      <span id="share-label">{% if analysis.is_public %}Shared — Copy Link{% else %}Share{% endif %}</span>
-    </button>
-  </div>
-  {% endif %}
-
-  <!-- Toast -->
-  <div id="share-toast" class="fixed bottom-6 right-6 z-50 hidden bg-emerald-900/90 border border-emerald-500/30 text-emerald-300 text-sm px-4 py-3 rounded-xl shadow-xl flex items-center gap-2">
-    <i data-lucide="check" class="w-4 h-4"></i>
-    <span>Link copied to clipboard!</span>
-  </div>
 
   <!-- Arbitrage Hero -->
   <div class="arbitrage-hero card p-8 mb-8">
     <div class="flex flex-col lg:flex-row lg:items-center gap-8">
       <div class="text-center lg:text-left">
         <div class="text-[#52526a] text-sm font-medium mb-1">Return on Investment</div>
-        <div class="font-heading font-extrabold text-7xl {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-green-400{% elif roi >= 0 %}text-amber-400{% else %}text-red-400{% endif %} mb-1">
+        <div class="font-heading font-extrabold text-7xl {% if roi >= 100 %}text-emerald-400{% elif roi >= 50 %}text-amber-400{% else %}text-red-400{% endif %} mb-1">
           {{ "%.0f"|format(roi) }}%
         </div>
-        <div class="flex flex-wrap items-center gap-2 mb-4">
-          <div class="verdict-badge verdict-{{ arb.get("verdict","avoid").lower().replace(" ","_") }} inline-block">
-            {{ arb.get("verdict", "—") }}
-          </div>
-          {% if arb.get("roi_data_source") == "real" %}
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">Based on real listing</span>
-          {% else %}
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25">Estimated buy price</span>
-          {% endif %}
+        <div class="verdict-badge verdict-{{ arb.get("verdict","avoid").lower().replace(" ","_") }} inline-block mb-4">
+          {{ arb.get("verdict", "—") }}
         </div>
         <p class="text-[#f1f5f9]/70 text-sm max-w-md">{{ arb.get("recommendation", "") }}</p>
       </div>
@@ -104,20 +62,19 @@
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Buy At</div>
           <div class="font-heading font-bold text-xl text-[#f1f5f9]">${{ "%.2f"|format(arb.get("buy_price",0)) }}</div>
-          {% if url_is_source %}
-          <div class="text-[#52526a] text-[10px] mt-1">from your listing</div>
-          {% endif %}
+
         </div>
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Sell At</div>
           <div class="font-heading font-bold text-xl text-[#f1f5f9]">${{ "%.2f"|format(arb.get("sell_price",0)) }}</div>
-          <div class="text-[#52526a] text-[10px] mt-1">recommended price</div>
+
         </div>
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Net Profit</div>
           <div class="font-heading font-bold text-xl {% if arb.get("net_profit",0) > 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
             ${{ "%.2f"|format(arb.get("net_profit",0)) }}
           </div>
+
         </div>
         <div class="bg-[#111118] rounded-xl p-4 text-center">
           <div class="text-[#52526a] text-xs mb-1">Best Platform</div>
@@ -151,29 +108,6 @@
       </div>
     </div>
 
-    <!-- Best alternative sourcing price (only shown when URL was the source) -->
-    {% if url_is_source and best_alt_price.val > 0 %}
-    <div class="mt-4 rounded-xl px-4 py-3 flex items-center justify-between
-      {% if best_alt_price.val < arb.get("buy_price",0) %}bg-emerald-500/10 border border-emerald-500/25{% else %}bg-[#111118] border border-[#252532]{% endif %}">
-      <div>
-        <div class="text-xs font-medium
-          {% if best_alt_price.val < arb.get("buy_price",0) %}text-emerald-400{% else %}text-[#52526a]{% endif %}">
-          {% if best_alt_price.val < arb.get("buy_price",0) %}Cheaper alternative found by research{% else %}Research also found this item at{% endif %}
-        </div>
-        <div class="text-[#52526a] text-xs mt-0.5">{{ best_alt_price.platform }} — see Sourcing Deals below</div>
-      </div>
-      <div class="text-right">
-        <div class="font-bold text-lg
-          {% if best_alt_price.val < arb.get("buy_price",0) %}text-emerald-400{% else %}text-[#f1f5f9]{% endif %}">
-          ${{ "%.0f"|format(best_alt_price.val) }}
-        </div>
-        {% if best_alt_price.val < arb.get("buy_price",0) %}
-        <div class="text-emerald-500 text-[10px]">Save ${{ "%.0f"|format(arb.get("buy_price",0) - best_alt_price.val) }}</div>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-
     <!-- Opportunity score -->
     <div class="mt-5">
       <div class="flex justify-between text-sm mb-2">
@@ -194,7 +128,7 @@
 
   <!-- Platform Breakdown -->
   {% if arb.get("platform_breakdown") %}
-  <div class="card p-6 mb-8" style="border-top:3px solid rgba(139,92,246,0.6);">
+  <div class="card p-6 mb-8">
     <h2 class="font-heading font-bold text-lg mb-5">Platform Breakdown</h2>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {% for p in arb.get("platform_breakdown",[]) %}
@@ -227,7 +161,7 @@
   {% endif %}
 
   <!-- Product Details -->
-  <div class="card p-6 mb-8" style="border-top:3px solid rgba(59,130,246,0.6);">
+  <div class="card p-6 mb-8">
     <div class="flex items-center justify-between mb-5">
       <h2 class="font-heading font-bold text-lg">Product Details</h2>
       <div class="flex items-center gap-2">
@@ -293,7 +227,7 @@
   </div>
 
   <!-- Market Prices -->
-  <div class="card p-6 mb-8" style="border-top:3px solid rgba(16,185,129,0.6);">
+  <div class="card p-6 mb-8">
     <h2 class="font-heading font-bold text-lg mb-5">Market Prices</h2>
     {% set min_p = pricing.get("min_sold",0) %}
     {% set max_p = pricing.get("max_sold",0) %}
@@ -374,44 +308,28 @@
 
     <!-- Live Search Links -->
     {% set q = (extracted.get("search_query") or analysis.raw_input) | urlencode %}
-    <div class="mt-6 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-5">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
-          <div class="w-1.5 h-4 bg-indigo-500 rounded-full"></div>
-          <h3 class="font-semibold text-sm text-[#f1f5f9]">Search Live on Platforms</h3>
-        </div>
-        <span class="text-[#52526a] text-xs">Click to open ↗</span>
-      </div>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-      {% for label, href in [
-        ("eBay Sold",  "https://www.ebay.com/sch/i.html?_nkw=" ~ q ~ "&LH_Sold=1&LH_Complete=1"),
-        ("Poshmark",   "https://poshmark.com/search?query=" ~ q ~ "&availability=sold_out"),
-        ("Mercari",    "https://www.mercari.com/search/?keyword=" ~ q),
-        ("GOAT",       "https://www.goat.com/search?query=" ~ q),
-        ("StockX",     "https://stockx.com/search?s=" ~ q),
-        ("Depop",      "https://www.depop.com/search/?q=" ~ q),
-        ("Vestiaire",  "https://www.vestiairecollective.com/search/?q=" ~ q)
-      ] %}
-      <a href="{{ href }}" target="_blank"
-        class="group flex items-center justify-between bg-[#111118] border border-[#252532] hover:border-indigo-500 hover:bg-indigo-500/10 rounded-xl px-4 py-3 transition-all">
-        <span class="text-sm font-medium text-[#f1f5f9]/80 group-hover:text-indigo-300 transition-colors">{{ label }}</span>
-        <svg class="w-3.5 h-3.5 text-[#52526a] group-hover:text-indigo-400 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-        </svg>
-      </a>
-      {% endfor %}
-    </div>
+    <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mt-5 mb-3">Search Live on Platforms</h3>
+    <div class="flex flex-wrap gap-2">
+      <a href="https://www.ebay.com/sch/i.html?_nkw={{ q }}&LH_Sold=1&LH_Complete=1" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">eBay Sold</a>
+      <a href="https://poshmark.com/search?query={{ q }}&availability=sold_out" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">Poshmark</a>
+      <a href="https://www.mercari.com/search/?keyword={{ q }}" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">Mercari</a>
+      <a href="https://www.goat.com/search?query={{ q }}" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">GOAT</a>
+      <a href="https://stockx.com/search?s={{ q }}" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">StockX</a>
+      <a href="https://www.depop.com/search/?q={{ q }}" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">Depop</a>
+      <a href="https://www.vestiairecollective.com/search/?q={{ q }}" target="_blank"
+        class="bg-[#111118] border border-[#252532] text-[#f1f5f9]/80 text-xs px-3 py-1.5 rounded-lg hover:border-indigo-500 transition-colors">Vestiaire</a>
     </div>
   </div>
 
   <!-- Sourcing Deals -->
-  <div class="card p-6 mb-8" style="border-top:3px solid rgba(245,158,11,0.6);">
-    <div class="flex items-center gap-3 mb-5">
-      <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-        <i data-lucide="tag" class="w-4 h-4 text-amber-400"></i>
-      </div>
-      <h2 class="font-heading font-bold text-lg">Sourcing Deals</h2>
-    </div>
+  <div class="card p-6 mb-8">
+    <h2 class="font-heading font-bold text-lg mb-5">Sourcing Deals</h2>
     {% if sourcing.get("best_deals") %}
     {% set platform_search_urls = {
       "ebay":               "https://www.ebay.com/sch/i.html?_nkw=",
@@ -467,10 +385,7 @@
     } %}
     {% if sourcing.get("similar_by_style") %}
     {% set style_names = sourcing.similar_by_style | map(attribute="item") | list %}
-    <div class="border-t border-[#252532] mt-6 pt-6 flex items-center gap-2 mb-4">
-      <div class="w-1.5 h-4 bg-amber-500 rounded-full"></div>
-      <h3 class="font-semibold text-sm text-[#f1f5f9]">Similar by Style</h3>
-    </div>
+    <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mb-3">Similar by Style</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
       {% for item in sourcing.similar_by_style[:4] %}
       {% set sim_platform = item.get("platform","") | lower %}
@@ -493,10 +408,7 @@
       {% if item.get("item","") not in style_names %}{% set _ = color_unique.append(item) %}{% endif %}
     {% endfor %}
     {% if color_unique %}
-    <div class="border-t border-[#252532] mt-6 pt-6 flex items-center gap-2 mb-4">
-      <div class="w-1.5 h-4 bg-amber-500 rounded-full"></div>
-      <h3 class="font-semibold text-sm text-[#f1f5f9]">Similar by Color</h3>
-    </div>
+    <h3 class="font-semibold text-sm text-[#f1f5f9]/70 mb-3">Similar by Color</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {% for item in color_unique[:4] %}
       {% set sim_platform = item.get("platform","") | lower %}
@@ -514,11 +426,6 @@
     </div>
     {% endif %}
 
-    {% if not sourcing.get("best_deals") and not sourcing.get("similar_by_style") and not sourcing.get("similar_by_color") %}
-    <div class="bg-[#111118] rounded-xl p-6 text-center">
-      <p class="text-[#52526a] text-sm">Sourcing data unavailable for this item. Try searching directly on eBay, Poshmark, or Mercari.</p>
-    </div>
-    {% endif %}
     {% if sourcing.get("sourcing_notes") %}
     <p class="text-[#f1f5f9]/50 text-sm mt-4">{{ sourcing.sourcing_notes }}</p>
     {% endif %}
@@ -526,7 +433,7 @@
 
   <!-- Budget-Friendly Alternatives -->
   {% if sourcing.get("budget_alternatives") %}
-  <div class="card p-6 mb-8" style="border-top:3px solid rgba(34,197,94,0.6); border-color: rgba(34,197,94,0.25);">
+  <div class="card p-6 mb-8" style="border-color: rgba(34,197,94,0.25);">
     <div class="flex items-center gap-3 mb-5">
       <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
         <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -577,7 +484,7 @@
 
   <!-- Listing Tips -->
   {% if arb.get("listing_tips") %}
-  <div class="card p-6 mb-8" style="border-top:3px solid rgba(99,102,241,0.6); border-color: rgba(99,102,241,0.25);">
+  <div class="card p-6 mb-8" style="border-color: rgba(99,102,241,0.25);">
     <div class="flex items-center gap-3 mb-4">
       <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
         <i data-lucide="lightbulb" class="w-4 h-4 text-indigo-400"></i>
@@ -595,120 +502,17 @@
   </div>
   {% endif %}
 
-  <!-- Google Trends -->
-  {% set trends_kw = extracted.get("search_query") or analysis.raw_input %}
-  {% if trends_kw %}
-  <div class="card p-6 mb-8" style="border-top:3px solid rgba(14,165,233,0.6);">
-    <div class="flex items-center gap-3 mb-5">
-      <div class="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center flex-shrink-0">
-        <i data-lucide="trending-up" class="w-4 h-4 text-sky-400"></i>
-      </div>
-      <div>
-        <h2 class="font-heading font-bold text-lg">Google Trends</h2>
-        <p class="text-[#52526a] text-xs">12-month search interest for "{{ trends_kw }}"</p>
-      </div>
-    </div>
-    <div class="bg-[#111118] rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <p class="text-[#f1f5f9]/60 text-sm">See how interest in this product has trended over the last 12 months on Google.</p>
-      <a href="https://trends.google.com/trends/explore?q={{ trends_kw | urlencode }}&date=today+12-m"
-        target="_blank" rel="noopener"
-        class="btn-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm flex-shrink-0">
-        <i data-lucide="external-link" class="w-4 h-4"></i>
-        Open Google Trends
-      </a>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Community Buzz -->
-  {% if social and (social.get("reddit") or social.get("youtube")) %}
-  <div class="card p-6 mb-8" style="border-top:3px solid rgba(249,115,22,0.6);">
-    <div class="flex items-center gap-3 mb-5">
-      <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0">
-        <i data-lucide="message-circle" class="w-4 h-4 text-orange-400"></i>
-      </div>
-      <h2 class="font-heading font-bold text-lg">Community Buzz</h2>
-    </div>
-
-    {% if social.get("reddit") %}
-    <h3 class="font-semibold text-sm text-[#f1f5f9]/60 mb-3 flex items-center gap-2">
-      <svg class="w-4 h-4 text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
-      Reddit Discussions
-    </h3>
-    <div class="space-y-2 mb-5">
-      {% for post in social.reddit[:5] %}
-      <a href="{{ post.link }}" target="_blank" rel="noopener"
-        class="block bg-[#111118] border border-[#252532] hover:border-orange-500/40 rounded-xl px-4 py-3 text-sm transition-colors">
-        <div class="flex items-center gap-2 mb-1">
-          <div class="font-medium text-[#f1f5f9] line-clamp-1 flex-1">{{ post.title }}</div>
-          {% if post.get("subreddit") %}
-          <span class="text-[#52526a] text-xs flex-shrink-0">{{ post.subreddit }}</span>
-          {% endif %}
-        </div>
-        {% if post.snippet %}
-        <div class="text-[#52526a] text-xs line-clamp-2">{{ post.snippet }}</div>
-        {% endif %}
-      </a>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    {% if social.get("youtube") %}
-    <h3 class="font-semibold text-sm text-[#f1f5f9]/60 mb-3 flex items-center gap-2">
-      <svg class="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
-      YouTube Videos
-    </h3>
-    <div class="grid grid-cols-2 gap-3">
-      {% for v in social.youtube[:4] %}
-      <a href="{{ v.link }}" target="_blank" rel="noopener"
-        class="bg-[#111118] border border-[#252532] hover:border-red-500/40 rounded-xl overflow-hidden transition-colors">
-        {% if v.thumbnail %}
-        <div class="w-full aspect-video bg-[#0a0a0f] overflow-hidden">
-          <img src="{{ v.thumbnail }}" alt="" class="w-full h-full object-cover">
-        </div>
-        {% endif %}
-        <div class="p-3">
-          <div class="text-xs font-medium text-[#f1f5f9] line-clamp-2 mb-1">{{ v.title }}</div>
-          <div class="text-[#52526a] text-xs">{{ v.channel }}{% if v.views %} · {{ v.views }}{% endif %}</div>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
-
   <!-- Disclaimer -->
   <p class="text-[#52526a] text-xs text-center mb-6 leading-relaxed">
     Figures are based on a mix of actual sold transaction data and AI model estimates. Price competitively, verify live listings before buying or selling, and utilise the platform search links above to confirm current market rates.
   </p>
 
   <!-- Actions -->
-  <div class="flex gap-3 flex-wrap">
+  <div class="flex gap-3">
     <a href="{{ url_for("analysis.input_page") }}" class="btn-primary px-6 py-3">
       <i data-lucide="plus" class="w-4 h-4 mr-2 inline"></i> New Analysis
     </a>
     <a href="{{ url_for("dashboard.home") }}" class="btn-outline px-6 py-3">Dashboard</a>
-    <button onclick="downloadPDF()" class="btn-outline px-6 py-3 flex items-center gap-2">
-      <i data-lucide="download" class="w-4 h-4"></i> Download PDF Report
-    </button>
-  </div>
-
-  <!-- Hidden PDF header — visible only in generated PDF -->
-  <div id="pdf-header" style="display:none; font-family:sans-serif; padding:24px 0 16px; border-bottom:2px solid #6366f1; margin-bottom:24px;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <div style="font-size:22px; font-weight:900; color:#6366f1; letter-spacing:-0.5px;">FlipAFind</div>
-        <div style="font-size:11px; color:#888; margin-top:2px;">AI-Powered Resale Intelligence</div>
-      </div>
-      <div style="text-align:right; font-size:11px; color:#888;">
-        <div>{{ analysis.created_at.strftime('%d %B %Y') }}</div>
-        <div style="margin-top:2px;">flipafind.com</div>
-      </div>
-    </div>
-    <div style="margin-top:12px; font-size:15px; font-weight:700; color:#1a1a2e;">
-      Flip Analysis Report — {{ extracted.get('brand','') }} {{ extracted.get('model','') }}
-    </div>
   </div>
 
   {% endif %}
@@ -727,83 +531,5 @@
     });
     lucide.createIcons();
   });
-
-  // PDF download
-  async function downloadPDF() {
-    const btn = event.currentTarget;
-    btn.textContent = 'Generating PDF…';
-    btn.disabled = true;
-
-    const header = document.getElementById('pdf-header');
-    header.style.display = 'block';
-
-    // Hide interactive elements from PDF
-    const hideEls = document.querySelectorAll('.no-pdf');
-    hideEls.forEach(el => el.style.display = 'none');
-
-    const content = document.querySelector('.max-w-5xl');
-    const opt = {
-      margin:      [12, 10, 12, 10],
-      filename:    'flipafind-report-{{ analysis.id }}.pdf',
-      image:       { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-      jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    try {
-      await html2pdf().set(opt).from(content).save();
-    } finally {
-      header.style.display = 'none';
-      hideEls.forEach(el => el.style.display = '');
-      btn.innerHTML = '<i data-lucide="download" class="w-4 h-4"></i> Download PDF Report';
-      btn.disabled = false;
-      lucide.createIcons();
-    }
-  }
-
-  // Share link toggle
-  let _isPublic = {{ 'true' if analysis.is_public else 'false' }};
-
-  async function toggleShare(id) {
-    const btn = document.getElementById('share-btn');
-    const label = document.getElementById('share-label');
-
-    // If already shared, just copy the link
-    if (_isPublic) {
-      await navigator.clipboard.writeText(window.location.origin + '/analyse/public/' + id).catch(() => {});
-      showToast();
-      return;
-    }
-
-    try {
-      const resp = await fetch(`/analyse/${id}/toggle_public`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': document.getElementById('csrf-token')?.value || '' }
-      });
-      const data = await resp.json();
-      _isPublic = data.is_public;
-      if (_isPublic) {
-        btn.style.cssText = 'background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:#34d399;';
-        label.textContent = 'Shared — Copy Link';
-        if (data.public_url) {
-          await navigator.clipboard.writeText(data.public_url).catch(() => {});
-          showToast();
-        }
-      } else {
-        btn.style.cssText = '';
-        label.textContent = 'Share';
-      }
-    } catch(e) {
-      console.error('Share toggle failed', e);
-    }
-  }
-
-  function showToast() {
-    const toast = document.getElementById('share-toast');
-    if (!toast) return;
-    toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), 3000);
-  }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 {% endblock %}

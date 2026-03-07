@@ -1,13 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Pricing — FlipFinder{% endblock %}
+{% block title %}Pricing — FlipAFind{% endblock %}
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 py-16 text-center">
-  <div class="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm px-4 py-2 rounded-full mb-8">
-    All features are free during beta!
+
+  <div class="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 text-orange-400 text-sm font-semibold px-4 py-2 rounded-full mb-4">
+    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+    Limited Time Offer — Save 50% on Pro
   </div>
+
   <h1 class="font-heading font-extrabold text-4xl text-gradient mb-4">Simple Pricing</h1>
-  <p class="text-[#52526a] mb-12">No surprises. Upgrade or cancel anytime.</p>
+  <p class="text-[#52526a] mb-4">No surprises. Upgrade or cancel anytime.</p>
+
+  <div class="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm px-4 py-2 rounded-full mb-4">
+    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+    All paid plans include a 10-day free trial — no charge until day 11
+  </div>
+
+  <p class="text-[#52526a] text-sm mb-12">Have a promo code? Enter it at checkout for additional discounts.</p>
+
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Free -->
     <div class="pricing-card">
       <div class="text-[#52526a] text-sm font-medium mb-2">Free</div>
       <div class="font-heading font-extrabold text-4xl mb-1">$0</div>
@@ -16,37 +29,55 @@
         <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 3 analyses/month</li>
         <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Basic results</li>
       </ul>
-      <a href="{{ url_for("auth.signup") }}" class="btn-outline w-full text-center py-2.5">Get Started</a>
+      <a href="{{ url_for('auth.signup') }}" class="btn-outline w-full text-center py-2.5 block">Get Started</a>
     </div>
+
+    <!-- Pro -->
     <div class="pricing-card popular-card relative">
-      <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</div>
+      <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">MOST POPULAR</div>
+      <div class="absolute -top-3 right-4 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">50% OFF</div>
       <div class="text-indigo-400 text-sm font-medium mb-2">Pro</div>
-      <div class="font-heading font-extrabold text-4xl mb-1">$14.99</div>
-      <div class="text-[#52526a] text-sm mb-6">/month</div>
+      <div class="flex items-baseline justify-center gap-2 mb-1">
+        <span class="font-heading font-extrabold text-4xl">$14.99</span>
+        <span class="text-[#52526a] text-lg line-through">$29.99</span>
+      </div>
+      <div class="text-orange-400 text-xs font-semibold mb-1">Limited time — lock in your rate forever</div>
+      <div class="text-[#52526a] text-sm mb-1">/month</div>
+      <div class="text-emerald-400 text-xs mb-6">✓ 10-day free trial included</div>
       <ul class="space-y-2 text-sm text-[#f1f5f9]/70 mb-8 text-left">
         <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 50 analyses/month</li>
         <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> All platforms</li>
         <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Auction results</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Trend & social data</li>
       </ul>
-      <form method="POST" action="{{ url_for("billing.create_checkout") }}">
+      <form method="POST" action="{{ url_for('billing.create_checkout') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn-primary w-full py-2.5">Start Pro</button>
+        <input type="hidden" name="plan" value="pro">
+        <button type="submit" class="btn-primary w-full py-2.5">Start Free Trial</button>
       </form>
     </div>
+
+    <!-- Premium -->
     <div class="pricing-card">
       <div class="text-purple-400 text-sm font-medium mb-2">Premium</div>
       <div class="font-heading font-extrabold text-4xl mb-1">$39.99</div>
-      <div class="text-[#52526a] text-sm mb-6">/month</div>
+      <div class="text-[#52526a] text-sm mb-1">/month</div>
+      <div class="text-emerald-400 text-xs mb-6">✓ 10-day free trial included</div>
       <ul class="space-y-2 text-sm text-[#f1f5f9]/70 mb-8 text-left">
         <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Unlimited analyses</li>
         <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Priority processing</li>
-        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> API access</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> PDF report export</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> All Pro features</li>
       </ul>
-      <form method="POST" action="{{ url_for("billing.create_checkout") }}">
+      <form method="POST" action="{{ url_for('billing.create_checkout') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn-outline w-full py-2.5">Go Premium</button>
+        <input type="hidden" name="plan" value="premium">
+        <button type="submit" class="btn-outline w-full py-2.5">Start Free Trial</button>
       </form>
     </div>
+
   </div>
+
+  <p class="text-[#52526a] text-xs mt-10">Cancel anytime before trial ends and you won't be charged. Manage your subscription via the billing portal.</p>
 </div>
 {% endblock %}

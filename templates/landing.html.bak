@@ -9,70 +9,12 @@
   <div class="absolute bottom-1/4 right-1/5 w-[400px] h-[400px] bg-purple-600/15 rounded-full blur-[100px] animate-pulse pointer-events-none" style="animation-delay:1.5s"></div>
   <div class="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-blue-600/8 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
-  <!-- Floating background product cards (decorative, lg+ only) -->
-  <div class="absolute top-[12%] right-[3%] opacity-[0.13] pointer-events-none select-none hidden lg:block" style="transform: rotate(7deg);" aria-hidden="true">
-    <div class="bg-[#1a1a28] border border-white/10 rounded-xl p-3 w-44 shadow-2xl">
-      <div class="flex items-center gap-1.5 mb-1.5">
-        <span class="text-sm">👟</span>
-        <div class="text-[10px] text-[#a5b4fc] font-semibold truncate">Supreme Box Logo Hoodie</div>
-      </div>
-      <div class="text-sm font-bold text-emerald-400 mb-0.5">+340% ROI</div>
-      <div class="text-[9px] text-[#52526a]">Buy $85 &rarr; Sell $375</div>
-    </div>
-  </div>
-
-  <div class="absolute bottom-[18%] left-[2%] opacity-[0.13] pointer-events-none select-none hidden lg:block" style="transform: rotate(-5deg);" aria-hidden="true">
-    <div class="bg-[#1a1a28] border border-white/10 rounded-xl p-3 w-44 shadow-2xl">
-      <div class="flex items-center gap-1.5 mb-1.5">
-        <span class="text-sm">⌚</span>
-        <div class="text-[10px] text-[#a5b4fc] font-semibold truncate">Rolex Submariner</div>
-      </div>
-      <div class="text-sm font-bold text-amber-400 mb-0.5">+85% ROI</div>
-      <div class="text-[9px] text-[#52526a]">Buy $8,200 &rarr; Sell $15,200</div>
-    </div>
-  </div>
-
-  <div class="absolute top-[42%] left-[1.5%] opacity-[0.10] pointer-events-none select-none hidden xl:block" style="transform: rotate(3deg);" aria-hidden="true">
-    <div class="bg-[#1a1a28] border border-white/10 rounded-xl p-3 w-44 shadow-2xl">
-      <div class="flex items-center gap-1.5 mb-1.5">
-        <span class="text-sm">👖</span>
-        <div class="text-[10px] text-[#a5b4fc] font-semibold truncate">Vintage Levi's 501</div>
-      </div>
-      <div class="text-sm font-bold text-indigo-400 mb-0.5">+220% ROI</div>
-      <div class="text-[9px] text-[#52526a]">Buy $12 &rarr; Sell $38</div>
-    </div>
-  </div>
-
-  <div class="absolute top-[28%] right-[1.5%] opacity-[0.10] pointer-events-none select-none hidden xl:block" style="transform: rotate(-8deg);" aria-hidden="true">
-    <div class="bg-[#1a1a28] border border-white/10 rounded-xl p-3 w-44 shadow-2xl">
-      <div class="flex items-center gap-1.5 mb-1.5">
-        <span class="text-sm">👟</span>
-        <div class="text-[10px] text-[#a5b4fc] font-semibold truncate">Off-White x Nike AF1</div>
-      </div>
-      <div class="text-sm font-bold text-emerald-400 mb-0.5">+490% ROI</div>
-      <div class="text-[9px] text-[#52526a]">Buy $190 &rarr; Sell $1,120</div>
-    </div>
-  </div>
-
-  <div class="absolute bottom-[8%] right-[4%] opacity-[0.10] pointer-events-none select-none hidden xl:block" style="transform: rotate(4deg);" aria-hidden="true">
-    <div class="bg-[#1a1a28] border border-white/10 rounded-xl p-3 w-44 shadow-2xl">
-      <div class="flex items-center gap-1.5 mb-1.5">
-        <span class="text-sm">👜</span>
-        <div class="text-[10px] text-[#a5b4fc] font-semibold truncate">LV Neverfull MM</div>
-      </div>
-      <div class="text-sm font-bold text-purple-400 mb-0.5">+140% ROI</div>
-      <div class="text-[9px] text-[#52526a]">Buy $680 &rarr; Sell $1,640</div>
-    </div>
-  </div>
-
   <div class="relative max-w-6xl mx-auto px-4 pt-20 pb-12">
     <!-- Top badge -->
     <div class="flex justify-center mb-8">
-      <div class="inline-flex flex-wrap justify-center items-center gap-x-2 gap-y-1 bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 text-xs sm:text-sm px-4 py-2 rounded-full font-medium tracking-tight max-w-[90vw] text-center">
-        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse flex-shrink-0"></span>
-        <span>Powered by 4 AI Agents</span>
-        <span class="text-indigo-500/60">·</span>
-        <span>Real-time market research</span>
+      <div class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 text-sm px-4 py-2 rounded-full font-medium tracking-tight">
+        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse inline-block"></span>
+        Powered by 4 AI Agents &nbsp;·&nbsp; Real-time market research
       </div>
     </div>
 
