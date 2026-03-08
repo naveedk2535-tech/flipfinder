@@ -3,6 +3,7 @@ import uuid
 import base64
 import json
 import io
+from datetime import datetime, timedelta
 from threading import Thread
 from PIL import Image as PilImage
 from concurrent.futures import ThreadPoolExecutor
@@ -42,6 +43,17 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
             db.session.commit()
 
             search_query = extracted.get('search_query', text_input or 'product')
+            # For image inputs the AI over-specifies (color, size, condition) making searches too narrow.
+            # Simplify to brand + product_type + model only.
+            if image_base64:
+                parts = [
+                    extracted.get('brand', ''),
+                    extracted.get('product_type', ''),
+                    extracted.get('model', ''),
+                ]
+                simple_query = ' '.join(p for p in parts if p and p.lower() not in ('unknown', '')).strip()
+                if simple_query:
+                    search_query = simple_query
 
             # When a URL was submitted, the listing price on that page IS the buy price.
             # Pass it through so the sourcing agent anchors cheapest_found to the real price.
@@ -59,7 +71,7 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
             db.session.commit()
 
             # Agent 4: Arbitrage
-            arbitrage = calculate_arbitrage(pricing, sourcing)
+            arbitrage = calculate_arbitrage(pricing, sourcing, product_info=extracted)
             # Tag whether ROI is based on a real listing price or an AI estimate
             has_real_price = (input_price > 0) or (sourcing.get('cheapest_found', 0) > 0)
             arbitrage['roi_data_source'] = 'real' if has_real_price else 'estimated'
@@ -112,7 +124,12 @@ def submit():
     # Reset monthly counter if we've rolled into a new month
     current_user.reset_monthly_if_needed()
     if not current_user.can_analyse():
-        flash('Analysis limit reached. Please upgrade your plan.', 'warning')
+        if current_user.subscription_tier == 'free':
+            flash("You've used all 3 free analyses this month. Upgrade to Pro for 50/month — includes a 10-day free trial.", 'warning')
+        elif current_user.subscription_tier == 'premium':
+            flash("You've reached your 300 analyses this month. Need more? Email us at hello@zzi.ai about our Enterprise plan.", 'warning')
+        else:
+            flash('Monthly analysis limit reached. Your limit resets at the start of next month.', 'warning')
         return redirect(url_for('billing.pricing'))
 
     image_file = request.files.get('image')
@@ -124,6 +141,26 @@ def submit():
         text_input = text_input[:max_len]
 
     has_image = image_file and image_file.filename
+
+    # 24-hour cooldown: block re-analysis of the same text/link within 24 hours
+    raw_for_check = (link_input or text_input)[:4000] if (link_input or text_input) else None
+    if raw_for_check and not has_image:
+        cutoff = datetime.utcnow() - timedelta(hours=24)
+        recent_dupe = Analysis.query.filter(
+            Analysis.user_id == current_user.id,
+            Analysis.raw_input == raw_for_check,
+            Analysis.status == 'complete',
+            Analysis.created_at >= cutoff
+        ).first()
+        if recent_dupe:
+            flash("This item was already analysed in the last 24 hours — market prices don't update that fast. "
+                  "Check back tomorrow for fresh data.", 'warning')
+            return redirect(url_for('analysis.results', id=recent_dupe.id))
+
+    # Image analysis is Premium-only
+    if has_image and current_user.subscription_tier not in ('premium',) and not current_user.is_admin:
+        flash('Image analysis is a Premium feature. Upgrade to unlock photo-based flip analysis.', 'warning')
+        return redirect(url_for('billing.pricing'))
     has_text = bool(text_input)
     has_link = bool(link_input)
 
@@ -223,6 +260,29 @@ def results(id):
         flash('Access denied.', 'danger')
         return redirect(url_for('dashboard.home'))
     return render_template('analysis/results.html', analysis=analysis)
+
+
+@analysis_bp.route('/export/<int:id>')
+@login_required
+def export(id):
+    """Clean print/PDF export page for Premium users."""
+    analysis = Analysis.query.get_or_404(id)
+    if analysis.user_id != current_user.id and not current_user.is_admin:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('dashboard.home'))
+    if current_user.subscription_tier not in ('premium',) and not current_user.is_admin:
+        flash('PDF export is a Premium feature. Upgrade to download reports.', 'warning')
+        return redirect(url_for('analysis.results', id=id))
+    arb      = analysis.get_arbitrage()
+    pricing  = analysis.get_pricing()
+    sourcing = analysis.get_sourcing()
+    extracted = analysis.get_extracted()
+    roi      = analysis.get_roi_value()
+    url_is_source = sourcing.get('url_is_source', False) if sourcing else False
+    return render_template('analysis/export.html',
+        analysis=analysis, arb=arb, pricing=pricing,
+        sourcing=sourcing, extracted=extracted, roi=roi,
+        url_is_source=url_is_source)
 
 
 @analysis_bp.route('/public/<int:id>')

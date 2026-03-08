@@ -14,23 +14,31 @@ import requests
 import requests.auth
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
+def _track(api, key_label, *, success, quota_hit):
+    try:
+        from utils.api_tracker import record
+        record(api, key_label, success=success, quota_hit=quota_hit)
+    except Exception:
+        pass
+
 logger = logging.getLogger(__name__)
 
-# SerpAPI keys (YouTube fallback only) — read from env, fallback to hardcoded
+# SerpAPI keys (YouTube fallback only) — read from env
 _SERPAPI_KEYS = [k for k in [
-    os.environ.get("SERPAPI_KEY", "36ecdeaea18fef34551d42aadb0dcd031df2737b6ccc320460ea762a4d0271fc"),
-    os.environ.get("SERPAPI_KEY_2", "646f6e87520dd1866a7d16772217927008e849596207fab35437e25654338393"),
+    os.environ.get("SERPAPI_KEY"),
+    os.environ.get("SERPAPI_KEY_2"),
 ] if k]
 
 # Cache the versioned embed_loader.js URL (changes infrequently)
 _embed_loader_cache: dict = {"url": "", "ts": 0.0}
 
-# Official YouTube Data API v3 — read from env, fallback to hardcoded
-_YT_KEY = os.environ.get("YT_KEY", "AIzaSyCQonRHJK44tgtwcacowpcEBWcl_iYCZ2E")
+# Official YouTube Data API v3 — read from env
+_YT_KEY = os.environ.get("YT_KEY", "")
 
-# Official Reddit API (application-only OAuth) — read from env, fallback to hardcoded
-_REDDIT_CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID", "8kghbyl5acamAzbpICzpEg")
-_REDDIT_CLIENT_SECRET = os.environ.get("REDDIT_CLIENT_SECRET", "zJM7Q8R_QaDJQCau7hqnL50FhhrlAg")
+# Official Reddit API (application-only OAuth) — read from env
+_REDDIT_CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID", "")
+_REDDIT_CLIENT_SECRET = os.environ.get("REDDIT_CLIENT_SECRET", "")
 _REDDIT_UA = "FlipAFind/1.0 (resale research tool)"
 
 
@@ -148,6 +156,8 @@ def get_social_data(keyword: str) -> dict:
 
 def _try_reddit_oauth(keyword: str) -> list:
     """Reddit application-only OAuth (no user login required)."""
+    if not _REDDIT_CLIENT_ID or not _REDDIT_CLIENT_SECRET:
+        return []
     try:
         # Step 1: Get access token
         token_resp = requests.post(
@@ -159,6 +169,7 @@ def _try_reddit_oauth(keyword: str) -> list:
         )
         if token_resp.status_code != 200:
             logger.warning(f"Reddit OAuth token HTTP {token_resp.status_code}: {token_resp.text[:200]}")
+            _track('reddit', 'oauth', success=False, quota_hit=token_resp.status_code==429)
             return []
         access_token = token_resp.json().get("access_token")
         if not access_token:
@@ -191,6 +202,7 @@ def _try_reddit_oauth(keyword: str) -> list:
                 "subreddit": d.get("subreddit_name_prefixed", ""),
             })
         logger.info(f"Reddit OAuth: {len(posts)} posts for '{keyword}'")
+        _track('reddit', 'oauth', success=True, quota_hit=False)
         return posts
     except Exception as e:
         logger.warning(f"Reddit OAuth exception for '{keyword}': {e}")
@@ -229,6 +241,8 @@ def _try_reddit_public(keyword: str) -> list:
 
 def _try_youtube_official(keyword: str) -> list:
     """YouTube Data API v3 search."""
+    if not _YT_KEY:
+        return []
     try:
         resp = requests.get(
             "https://www.googleapis.com/youtube/v3/search",
@@ -243,6 +257,7 @@ def _try_youtube_official(keyword: str) -> list:
         )
         if resp.status_code != 200:
             logger.warning(f"YouTube API HTTP {resp.status_code} for '{keyword}': {resp.text[:200]}")
+            _track('youtube', 'key1', success=False, quota_hit=resp.status_code==429)
             return []
         items = resp.json().get("items", [])
         videos = []
@@ -261,6 +276,7 @@ def _try_youtube_official(keyword: str) -> list:
                 "views": "",
             })
         logger.info(f"YouTube API: {len(videos)} videos for '{keyword}'")
+        _track('youtube', 'key1', success=True, quota_hit=False)
         return videos
     except Exception as e:
         logger.warning(f"YouTube API exception for '{keyword}': {e}")
@@ -276,6 +292,7 @@ def _try_youtube_serpapi(keyword: str, api_key: str) -> list:
         )
         if resp.status_code != 200:
             logger.warning(f"SerpAPI YouTube HTTP {resp.status_code} for '{keyword}': {resp.text[:200]}")
+            _track('serpapi', 'key1', success=False, quota_hit=resp.status_code==429)
             return []
         results = resp.json().get("video_results", [])
         videos = []
@@ -287,6 +304,7 @@ def _try_youtube_serpapi(keyword: str, api_key: str) -> list:
                 "channel": v.get("channel", {}).get("name", ""),
                 "views": v.get("views", ""),
             })
+        _track('serpapi', 'key1', success=True, quota_hit=False)
         return videos
     except Exception as e:
         logger.warning(f"SerpAPI YouTube exception for '{keyword}': {e}")

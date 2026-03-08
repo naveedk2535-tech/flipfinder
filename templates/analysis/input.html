@@ -10,7 +10,7 @@
       AI-powered resale analysis
     </div>
     <h1 class="font-heading font-bold text-3xl sm:text-4xl text-gradient mb-3">What are you flipping?</h1>
-    <p class="text-[#52526a] text-sm sm:text-base">Get buy prices, sell prices &amp; flip ROI in seconds</p>
+    <p class="text-[#52526a] text-sm sm:text-base">Snap a photo, paste a URL, or describe any item — get buy &amp; sell prices in seconds</p>
   </div>
 
   <!-- Main card -->
@@ -33,6 +33,13 @@
         class="tab-btn flex-1 py-3.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200">
         <i data-lucide="camera" class="w-4 h-4"></i>
         <span>Photo</span>
+        <span class="hidden sm:inline text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full font-bold">Premium</span>
+      </button>
+      <button type="button" id="tab-calc" onclick="switchTab('calc')"
+        class="tab-btn flex-1 py-3.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200">
+        <i data-lucide="calculator" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">Calculator</span>
+        <span class="sm:hidden">Calc</span>
       </button>
     </div>
 
@@ -98,6 +105,12 @@
 
         <!-- Image Panel -->
         <div id="panel-image" class="panel hidden">
+          {% if current_user.subscription_tier != 'premium' and not current_user.is_admin %}
+          <div class="mb-3 flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs px-3 py-2 rounded-lg">
+            <i data-lucide="lock" class="w-3.5 h-3.5 flex-shrink-0"></i>
+            <span>Photo analysis is a <a href="{{ url_for('billing.pricing') }}" class="underline font-semibold">Premium</a> feature — upgrade to snap &amp; analyse any item.</span>
+          </div>
+          {% endif %}
           <input type="file" name="image" id="image-input" accept=".jpg,.jpeg,.png,.webp" class="hidden">
           <div id="drop-zone" onclick="document.getElementById('image-input').click()"
                class="border-2 border-dashed border-indigo-500/30 rounded-xl p-8 text-center cursor-pointer transition-all duration-200 hover:border-indigo-500/60 hover:bg-indigo-500/5">
@@ -111,6 +124,27 @@
               <p id="image-filename" class="text-indigo-400 text-xs mt-2 font-medium"></p>
             </div>
           </div>
+        </div>
+
+        <!-- Calculator Panel -->
+        <div id="panel-calc" class="panel hidden">
+          <p class="text-xs text-[#52526a] mb-4">Instant fee estimate — no AI, no API. Enter prices to see your net profit across platforms.</p>
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <div>
+              <label class="block text-xs text-[#52526a] mb-1.5">Buy Price (£)</label>
+              <input type="number" id="calc-buy" min="0" step="0.01" placeholder="0.00"
+                class="w-full bg-[#111118] border border-[#2a2a3a] focus:border-indigo-500 rounded-xl px-4 py-3 text-sm text-[#f1f5f9] placeholder-[#3a3a52] outline-none transition-all"
+                oninput="runCalc()">
+            </div>
+            <div>
+              <label class="block text-xs text-[#52526a] mb-1.5">Sell Price (£)</label>
+              <input type="number" id="calc-sell" min="0" step="0.01" placeholder="0.00"
+                class="w-full bg-[#111118] border border-[#2a2a3a] focus:border-indigo-500 rounded-xl px-4 py-3 text-sm text-[#f1f5f9] placeholder-[#3a3a52] outline-none transition-all"
+                oninput="runCalc()">
+            </div>
+          </div>
+          <div id="calc-results" class="hidden"></div>
+          <p class="text-[10px] text-[#3a3a52] mt-3">Estimate only. Run a full analysis for real sold-price research.</p>
         </div>
 
         <!-- Submit -->
@@ -184,14 +218,59 @@
 <script>
   // Tab switching
   function switchTab(tab) {
-    ['url', 'text', 'image'].forEach(t => {
+    ['url', 'text', 'image', 'calc'].forEach(t => {
       document.getElementById('panel-' + t).classList.add('hidden');
       document.getElementById('tab-' + t).classList.remove('tab-active');
     });
     document.getElementById('panel-' + tab).classList.remove('hidden');
     document.getElementById('tab-' + tab).classList.add('tab-active');
+    // Hide submit button on calculator tab (it doesn't submit)
+    document.getElementById('submit-btn').style.display = tab === 'calc' ? 'none' : '';
   }
   switchTab('url'); // default
+
+  // Quick Profit Calculator
+  const CALC_PLATFORMS = [
+    { name: 'eBay',     fee: 0.135 },
+    { name: 'Depop',    fee: 0.10  },
+    { name: 'Poshmark', fee: 0.20  },
+    { name: 'StockX',   fee: 0.095 },
+  ];
+  function runCalc() {
+    const buy  = parseFloat(document.getElementById('calc-buy').value)  || 0;
+    const sell = parseFloat(document.getElementById('calc-sell').value) || 0;
+    const el   = document.getElementById('calc-results');
+    if (!buy || !sell) { el.classList.add('hidden'); return; }
+    let best = null, rows = '';
+    CALC_PLATFORMS.forEach(p => {
+      const fee = sell * p.fee;
+      const net = sell - fee - buy;
+      const roi = buy > 0 ? (net / buy * 100) : 0;
+      const roiCls = roi >= 100 ? 'text-emerald-400' : roi >= 50 ? 'text-green-400' : roi >= 0 ? 'text-amber-400' : 'text-red-400';
+      const profitCls = net >= 0 ? 'text-emerald-400' : 'text-red-400';
+      if (!best || net > best.net) best = { name: p.name, net };
+      rows += `<tr class="border-b border-[#1a1a28]">
+        <td class="px-3 py-2.5 text-[#f1f5f9] text-sm">${p.name}</td>
+        <td class="px-3 py-2.5 text-[#52526a] text-sm">£${fee.toFixed(2)}</td>
+        <td class="px-3 py-2.5 font-semibold text-sm ${profitCls}">£${net.toFixed(2)}</td>
+        <td class="px-3 py-2.5 font-bold text-sm ${roiCls}">${roi.toFixed(0)}%</td>
+      </tr>`;
+    });
+    el.innerHTML = `
+      <div class="text-xs text-indigo-400 font-semibold mb-2">Best: ${best.name} — £${best.net.toFixed(2)} profit</div>
+      <div class="rounded-xl overflow-hidden border border-[#252532]" style="background:#111118">
+        <table class="w-full">
+          <thead><tr class="text-[#52526a] text-[10px] uppercase tracking-wider border-b border-[#252532]">
+            <th class="px-3 py-2 text-left">Platform</th>
+            <th class="px-3 py-2 text-left">Fee</th>
+            <th class="px-3 py-2 text-left">Net Profit</th>
+            <th class="px-3 py-2 text-left">ROI</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    el.classList.remove('hidden');
+  }
 
   // Image upload preview
   document.getElementById('image-input').addEventListener('change', function() {

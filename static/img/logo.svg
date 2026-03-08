@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="400" height="120">
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#a855f7"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e0e7ff"/>
+      <stop offset="100%" style="stop-color:#c4b5fd"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Icon: rounded square -->
+  <rect x="8" y="8" width="104" height="104" rx="22" ry="22" fill="url(#iconGrad)" filter="url(#glow)"/>
+
+  <!-- F shape -->
+  <rect x="32" y="30" width="56" height="10" rx="5" fill="white" opacity="0.95"/>
+  <rect x="32" y="30" width="10" height="60" rx="5" fill="white" opacity="0.95"/>
+  <rect x="32" y="55" width="42" height="9" rx="4.5" fill="white" opacity="0.85"/>
+
+  <!-- Upward arrow (flip/profit symbol) -->
+  <polyline points="68,78 80,62 92,78" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <line x1="80" y1="62" x2="80" y2="90" stroke="white" stroke-width="7" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- Wordmark -->
+  <text x="132" y="68" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="800" fill="url(#textGrad)" letter-spacing="-1">Flip</text>
+  <text x="222" y="68" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="800" fill="url(#iconGrad)" letter-spacing="-1">A</text>
+  <text x="252" y="68" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="800" fill="url(#textGrad)" letter-spacing="-1">Find</text>
+
+  <!-- Tagline -->
+  <text x="132" y="92" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#818cf8" letter-spacing="2" font-weight="500">AI RESALE INTELLIGENCE</text>
+</svg>

@@ -44,18 +44,22 @@ class User(UserMixin, db.Model):
         return bcrypt.check_password_hash(self.password_hash, password)
 
     def can_analyse(self):
-        # Admins and premium users always have access
-        if self.is_admin or self.subscription_tier == 'premium':
+        if self.is_admin:
             return True
-        # Pro users: 50/month while subscription is active or trialing
+        # Premium: 300/month
+        if self.subscription_tier == 'premium' and self.subscription_status in ('active', 'trialing'):
+            return self.analyses_used_this_month < 300
+        # Pro: 50/month
         if self.subscription_tier == 'pro' and self.subscription_status in ('active', 'trialing'):
             return self.analyses_used_this_month < 50
         # Free tier: 3/month
         return self.analyses_used_this_month < 3
 
     def get_monthly_limit(self):
-        if self.is_admin or self.subscription_tier == 'premium':
+        if self.is_admin:
             return 999999
+        if self.subscription_tier == 'premium':
+            return 300
         if self.subscription_tier == 'pro':
             return 50
         return 3

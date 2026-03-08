@@ -3,6 +3,17 @@ from datetime import datetime
 import json
 
 
+CATEGORY_MAP = [
+    (['sneaker', 'shoe', 'trainer', 'boot', 'sandal'], ('Sneakers', 'indigo')),
+    (['clothing', 'jacket', 'shirt', 'dress', 'hoodie', 'jeans', 'coat', 'top', 'trousers', 'sweatshirt', 'sweater', 'knitwear'], ('Clothing', 'violet')),
+    (['handbag', 'bag', 'backpack', 'purse', 'wallet', 'tote', 'clutch'], ('Bags', 'pink')),
+    (['watch'], ('Watches', 'amber')),
+    (['electronic', 'phone', 'laptop', 'console', 'camera', 'tablet', 'headphone', 'airpod', 'speaker', 'ipad', 'iphone'], ('Electronics', 'cyan')),
+    (['card', 'toy', 'figure', 'collectible', 'lego', 'action figure', 'vinyl', 'funko'], ('Collectibles', 'emerald')),
+    (['book', 'record', 'dvd', 'cd', 'game', 'video game'], ('Books & Media', 'orange')),
+]
+
+
 class Analysis(db.Model):
     __tablename__ = 'analyses'
 
@@ -75,6 +86,15 @@ class Analysis(db.Model):
         if self.raw_input:
             return self.raw_input[:80]
         return 'Unknown Product'
+
+    def get_category(self):
+        """Return (label, colour) tuple derived from product_type in extracted_product JSON."""
+        extracted = self.get_extracted()
+        ptype = extracted.get('product_type', '').lower()
+        for keywords, result in CATEGORY_MAP:
+            if any(k in ptype for k in keywords):
+                return result
+        return ('Other', 'slate')
 
     def __repr__(self):
         return f'<Analysis {self.id} {self.status}>'

@@ -25,9 +25,14 @@
       <div class="text-[#52526a] text-sm font-medium mb-2">Free</div>
       <div class="font-heading font-extrabold text-4xl mb-1">$0</div>
       <div class="text-[#52526a] text-sm mb-6">/month</div>
-      <ul class="space-y-2 text-sm text-[#f1f5f9]/70 mb-8 text-left">
-        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 3 analyses/month</li>
-        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Basic results</li>
+      <ul class="space-y-2 text-sm mb-8 text-left">
+        <li class="flex gap-2 text-[#f1f5f9]/70"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 3 analyses/month</li>
+        <li class="flex gap-2 text-[#f1f5f9]/70"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Full AI flip analysis</li>
+        <li class="flex gap-2 text-[#f1f5f9]/70"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 10+ platforms searched</li>
+        <li class="flex gap-2 text-[#f1f5f9]/70"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> ROI &amp; profit calculator</li>
+
+        <li class="flex gap-2 text-[#52526a]"><i data-lucide="lock" class="w-4 h-4 flex-shrink-0 mt-0.5"></i> <span>Community buzz (Reddit + YouTube) <span class="text-xs">(Pro)</span></span></li>
+        <li class="flex gap-2 text-[#52526a]"><i data-lucide="lock" class="w-4 h-4 flex-shrink-0 mt-0.5"></i> <span>Export reports as PDF <span class="text-xs">(Premium)</span></span></li>
       </ul>
       <a href="{{ url_for('auth.signup') }}" class="btn-outline w-full text-center py-2.5 block">Get Started</a>
     </div>
@@ -41,14 +46,14 @@
         <span class="font-heading font-extrabold text-4xl">$14.99</span>
         <span class="text-[#52526a] text-lg line-through">$29.99</span>
       </div>
-      <div class="text-orange-400 text-xs font-semibold mb-1">Limited time — lock in your rate forever</div>
       <div class="text-[#52526a] text-sm mb-1">/month</div>
       <div class="text-emerald-400 text-xs mb-6">✓ 10-day free trial included</div>
       <ul class="space-y-2 text-sm text-[#f1f5f9]/70 mb-8 text-left">
         <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 50 analyses/month</li>
-        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> All platforms</li>
-        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Auction results</li>
-        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Trend & social data</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 10+ platforms searched</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Similar item finder</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Community buzz (Reddit + YouTube)</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Trend &amp; social data</li>
       </ul>
       <form method="POST" action="{{ url_for('billing.create_checkout') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -64,16 +69,19 @@
       <div class="text-[#52526a] text-sm mb-1">/month</div>
       <div class="text-emerald-400 text-xs mb-6">✓ 10-day free trial included</div>
       <ul class="space-y-2 text-sm text-[#f1f5f9]/70 mb-8 text-left">
-        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Unlimited analyses</li>
-        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Priority processing</li>
-        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> PDF report export</li>
-        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> All Pro features</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 300 analyses/month</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Photo-based item analysis</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Export reports as PDF</li>
+        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Everything in Pro</li>
       </ul>
       <form method="POST" action="{{ url_for('billing.create_checkout') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="plan" value="premium">
         <button type="submit" class="btn-outline w-full py-2.5">Start Free Trial</button>
       </form>
+      <p class="text-[#52526a] text-xs mt-4 text-center">
+        Need more than 300/month? <a href="mailto:hello@zzi.ai" class="text-indigo-400 hover:underline">Contact us</a> about our Enterprise plan.
+      </p>
     </div>
 
   </div>

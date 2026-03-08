@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlipAFind Report — {{ extracted.get('brand','') }} {{ extracted.get('model','') }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff; color: #1a1a2e; font-size: 13px; line-height: 1.5; }
+
+    /* Print button — hidden in PDF */
+    .print-bar { background: #6366f1; color: white; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .print-bar h3 { font-size: 14px; font-weight: 600; }
+    .print-bar button { background: white; color: #6366f1; border: none; border-radius: 8px; padding: 8px 20px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+    .page { max-width: 800px; margin: 0 auto; padding: 32px 28px; }
+
+    /* Header */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 3px solid #6366f1; margin-bottom: 28px; }
+    .brand { font-size: 24px; font-weight: 900; color: #6366f1; letter-spacing: -0.5px; }
+    .brand span { color: #a855f7; }
+    .brand-sub { font-size: 10px; color: #888; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
+    .report-meta { text-align: right; }
+    .report-meta .item-name { font-size: 15px; font-weight: 700; color: #1a1a2e; }
+    .report-meta .date { font-size: 11px; color: #888; margin-top: 4px; }
+
+    /* Section */
+    .section { margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+    .section-title { background: #f8f9ff; border-bottom: 1px solid #e5e7eb; padding: 10px 16px; font-size: 12px; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: 0.8px; }
+
+    /* Hero ROI */
+    .roi-hero { padding: 20px 16px; background: linear-gradient(135deg, #f0f0ff, #faf5ff); }
+    .roi-number { font-size: 56px; font-weight: 900; line-height: 1; }
+    .roi-positive { color: #059669; }
+    .roi-good { color: #16a34a; }
+    .roi-warning { color: #d97706; }
+    .roi-negative { color: #dc2626; }
+    .verdict-pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-top: 6px; letter-spacing: 0.5px; }
+    .verdict-strong { background: #d1fae5; color: #065f46; }
+    .verdict-good { background: #e0f2fe; color: #0369a1; }
+    .verdict-caution { background: #fef3c7; color: #92400e; }
+    .verdict-avoid { background: #fee2e2; color: #991b1b; }
+
+    /* Stats grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+    .stat-box { padding: 12px 14px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; }
+    .stat-box:last-child, .stat-box:nth-child(4n) { border-right: none; }
+    .stat-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-value { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+    .stat-value.green { color: #059669; }
+    .stat-value.indigo { color: #6366f1; }
+    .stat-value.amber { color: #d97706; }
+    .stat-sub { font-size: 10px; color: #888; margin-top: 2px; }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { background: #f8f9ff; font-size: 10px; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    .data-table td { padding: 8px 12px; font-size: 12px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:nth-child(even) td { background: #fafafa; }
+    .price-green { color: #059669; font-weight: 700; }
+    .price-amber { color: #d97706; font-weight: 700; }
+    .price-indigo { color: #6366f1; font-weight: 700; }
+    .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 999px; }
+    .badge-best { background: #ede9fe; color: #5b21b6; }
+
+    /* Product details */
+    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 0; }
+    .detail-item { padding: 10px 16px; border-right: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; }
+    .detail-item:nth-child(2n) { border-right: none; }
+    .detail-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .detail-value { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+
+    /* Tips list */
+    .tips-list { padding: 12px 16px; }
+    .tip-item { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; font-size: 12px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+    .tip-item:last-child { border-bottom: none; }
+    .tip-dot { color: #6366f1; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
+
+    /* Recommendation box */
+    .rec-box { padding: 14px 16px; background: #f0f0ff; border-bottom: 1px solid #e5e7eb; }
+    .rec-text { font-size: 13px; color: #374151; }
+
+    /* Platform bars */
+    .platform-row { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid #f3f4f6; }
+    .platform-row:last-child { border-bottom: none; }
+    .platform-name { width: 90px; font-size: 12px; font-weight: 600; color: #1a1a2e; flex-shrink: 0; }
+    .platform-bar-wrap { flex: 1; background: #f3f4f6; border-radius: 4px; height: 8px; overflow: hidden; }
+    .platform-bar { height: 8px; border-radius: 4px; background: #6366f1; }
+    .platform-bar.best { background: linear-gradient(90deg, #6366f1, #a855f7); }
+    .platform-profit { width: 70px; text-align: right; font-size: 12px; font-weight: 700; color: #059669; }
+    .platform-fee { width: 50px; text-align: right; font-size: 11px; color: #888; }
+
+    /* Sourcing deals */
+    .deal-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid #f3f4f6; }
+    .deal-row:last-child { border-bottom: none; }
+    .deal-title { font-size: 12px; font-weight: 500; color: #1a1a2e; flex: 1; }
+    .deal-platform { font-size: 11px; color: #888; margin-top: 1px; }
+    .deal-price { font-size: 14px; font-weight: 800; color: #059669; flex-shrink: 0; margin-left: 12px; }
+
+    /* Footer */
+    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+    .footer-brand { font-size: 12px; font-weight: 700; color: #6366f1; }
+    .footer-disclaimer { font-size: 10px; color: #aaa; max-width: 500px; text-align: right; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    @media print {
+      .print-bar { display: none !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { padding: 20px; }
+      .section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Print bar (hidden when printing) -->
+<div class="print-bar">
+  <div>
+    <h3>FlipAFind — Flip Analysis Report</h3>
+    <div style="font-size:12px;opacity:0.85;margin-top:2px;">{{ extracted.get('brand','') }} {{ extracted.get('model','') }} · {{ analysis.created_at.strftime('%d %B %Y') }}</div>
+  </div>
+  <button onclick="window.print()">🖨 Print / Save as PDF</button>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="brand">Flip<span>A</span>Find</div>
+      <div class="brand-sub">AI Resale Intelligence</div>
+    </div>
+    <div class="report-meta">
+      <div class="item-name">{{ extracted.get('brand','') }} {{ extracted.get('model','') }}</div>
+      {% if extracted.get('condition') %}<div style="font-size:12px;color:#555;margin-top:3px;">{{ extracted.condition }}{% if extracted.get('size') %} · {{ extracted.size }}{% endif %}</div>{% endif %}
+      <div class="date">Report generated {{ analysis.created_at.strftime('%d %B %Y at %H:%M') }}</div>
+      <div class="date">flipafind.com</div>
+    </div>
+  </div>
+
+  <!-- ROI Hero -->
+  <div class="section">
+    <div class="section-title">Flip Summary</div>
+    <div class="roi-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;">
+      <div>
+        <div class="roi-number {% if roi >= 100 %}roi-positive{% elif roi >= 50 %}roi-good{% elif roi >= 0 %}roi-warning{% else %}roi-negative{% endif %}">{{ "%.0f"|format(roi) }}%</div>
+        <div style="font-size:12px;color:#555;margin-top:4px;">Return on Investment</div>
+        <div class="verdict-pill {% if 'strong' in arb.get('verdict','') | lower %}verdict-strong{% elif 'good' in arb.get('verdict','') | lower or 'solid' in arb.get('verdict','') | lower %}verdict-good{% elif 'caution' in arb.get('verdict','') | lower or 'weak' in arb.get('verdict','') | lower %}verdict-caution{% else %}verdict-avoid{% endif %}">
+          {{ arb.get('verdict', '—') }}
+        </div>
+        {% if arb.get('roi_data_source') == 'real' %}
+        <div style="font-size:10px;color:#059669;margin-top:6px;">✓ Based on real listing data</div>
+        {% else %}
+        <div style="font-size:10px;color:#d97706;margin-top:6px;">⚠ Estimated buy price (no live listing found)</div>
+        {% endif %}
+      </div>
+      <div style="flex:1;max-width:420px;">
+        {% if arb.get('recommendation') %}
+        <div style="font-size:12px;color:#374151;background:#f8f9ff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;line-height:1.6;">{{ arb.recommendation }}</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">Buy At</div>
+        <div class="stat-value">${{ "%.2f"|format(arb.get('buy_price',0)) }}</div>
+        {% if url_is_source %}<div class="stat-sub">from your listing</div>{% endif %}
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Sell At</div>
+        <div class="stat-value indigo">${{ "%.2f"|format(arb.get('sell_price',0)) }}</div>
+        <div class="stat-sub">recommended price</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Net Profit</div>
+        <div class="stat-value {% if arb.get('net_profit',0) > 0 %}green{% endif %}">${{ "%.2f"|format(arb.get('net_profit',0)) }}</div>
+        <div class="stat-sub">after fees</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">True Profit</div>
+        {% set tnp = arb.get('true_net_profit', arb.get('net_profit',0) - arb.get('shipping_cost_est',10)) %}
+        <div class="stat-value {% if tnp > 0 %}green{% endif %}">${{ "%.2f"|format(tnp) }}</div>
+        <div class="stat-sub">after shipping (${{ "%.0f"|format(arb.get('shipping_cost_est',10)) }} est.)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Best Platform</div>
+        <div class="stat-value indigo" style="font-size:14px;">{{ arb.get('best_platform','—') }}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Break-Even</div>
+        <div class="stat-value amber">${{ "%.0f"|format(arb.get('break_even_price',0)) }}</div>
+        <div class="stat-sub">min. sell price</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Opportunity Score</div>
+        <div class="stat-value">{{ arb.get('opportunity_score',0) }}<span style="font-size:12px;font-weight:400;color:#888;">/100</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Risk</div>
+        <div class="stat-value" style="font-size:14px;text-transform:capitalize;">{{ arb.get('risk_rating','—') }}</div>
+        <div class="stat-sub">Confidence: {{ pricing.get('confidence','—') }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Platform Breakdown -->
+  {% if arb.get('platform_breakdown') %}
+  {% set max_profit = arb.platform_breakdown | map(attribute='net_profit') | max %}
+  <div class="section">
+    <div class="section-title">Platform Comparison</div>
+    {% for p in arb.platform_breakdown %}
+    {% set bar_pct = ((p.net_profit / max_profit) * 100) | int if max_profit > 0 else 0 %}
+    <div class="platform-row">
+      <div class="platform-name">
+        {{ p.platform }}
+        {% if p.platform == arb.get('best_platform') %}<span class="badge badge-best">BEST</span>{% endif %}
+      </div>
+      <div class="platform-bar-wrap">
+        <div class="platform-bar {% if p.platform == arb.get('best_platform') %}best{% endif %}" style="width:{{ [bar_pct,3]|max }}%"></div>
+      </div>
+      <div class="platform-fee">{{ p.fee_pct }}% fee</div>
+      <div class="platform-profit {% if p.net_profit <= 0 %}price-indigo{% endif %}">${{ "%.2f"|format(p.net_profit) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="two-col">
+
+    <!-- Product Details -->
+    <div class="section">
+      <div class="section-title">Product Details</div>
+      <div class="details-grid">
+        {% for label, key in [('Brand','brand'),('Type','product_type'),('Model','model'),('Condition','condition'),('Size','size'),('Era','era'),('Materials','materials')] %}
+        {% if extracted.get(key) %}
+        <div class="detail-item">
+          <div class="detail-label">{{ label }}</div>
+          <div class="detail-value">{{ extracted[key] }}</div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% if extracted.get('estimated_retail_price') and extracted.estimated_retail_price > 0 %}
+        <div class="detail-item">
+          <div class="detail-label">Original Retail</div>
+          <div class="detail-value">${{ "%.0f"|format(extracted.estimated_retail_price) }}</div>
+        </div>
+        {% endif %}
+        {% if extracted.get('demand_level') %}
+        <div class="detail-item">
+          <div class="detail-label">Demand</div>
+          <div class="detail-value">{{ extracted.demand_level | capitalize }}</div>
+        </div>
+        {% endif %}
+      </div>
+      {% if extracted.get('notable_features') %}
+      <div style="padding:10px 16px;border-top:1px solid #f3f4f6;font-size:12px;color:#555;">{{ extracted.notable_features }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Market Prices -->
+    <div class="section">
+      <div class="section-title">Market Prices</div>
+      <div class="details-grid">
+        <div class="detail-item">
+          <div class="detail-label">Min Sold</div>
+          <div class="detail-value">${{ "%.0f"|format(pricing.get('min_sold',0)) }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Avg Sold</div>
+          <div class="detail-value" style="color:#6366f1;">${{ "%.0f"|format(pricing.get('avg_sold',0)) }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Max Sold</div>
+          <div class="detail-value">${{ "%.0f"|format(pricing.get('max_sold',0)) }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Recommended Sell</div>
+          <div class="detail-value" style="color:#6366f1;">${{ "%.2f"|format(pricing.get('recommended_sell_price',0)) }}</div>
+        </div>
+        {% if pricing.get('price_trend') %}
+        <div class="detail-item">
+          <div class="detail-label">Price Trend</div>
+          <div class="detail-value">{{ pricing.price_trend | capitalize }}</div>
+        </div>
+        {% endif %}
+        {% if pricing.get('confidence') %}
+        <div class="detail-item">
+          <div class="detail-label">Confidence</div>
+          <div class="detail-value">{{ pricing.confidence | capitalize }}</div>
+        </div>
+        {% endif %}
+      </div>
+      {% if pricing.get('market_notes') %}
+      <div style="padding:10px 16px;border-top:1px solid #f3f4f6;font-size:11px;color:#666;">{{ pricing.market_notes }}</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Sold Listings -->
+  {% if pricing.get('sources') %}
+  <div class="section">
+    <div class="section-title">Recent Sold Listings</div>
+    <table class="data-table">
+      <thead><tr><th>Item</th><th>Platform</th><th>Date</th><th style="text-align:right;">Price</th></tr></thead>
+      <tbody>
+        {% for s in pricing.sources[:8] %}
+        <tr>
+          <td>{{ s.get('title','—') }}</td>
+          <td>{{ s.get('platform','') }}</td>
+          <td>{{ s.get('date','') }}</td>
+          <td style="text-align:right;" class="price-green">${{ "%.0f"|format(s.get('price',0)) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Auction Results -->
+  {% if pricing.get('auction_prices') %}
+  <div class="section">
+    <div class="section-title">Auction House Results</div>
+    <table class="data-table">
+      <thead><tr><th>Auction House</th><th>Lot Description</th><th>Date</th><th style="text-align:right;">Hammer Price</th></tr></thead>
+      <tbody>
+        {% for a in pricing.auction_prices %}
+        <tr>
+          <td>{{ a.get('house','') }}</td>
+          <td>{{ a.get('lot_description','') }}</td>
+          <td>{{ a.get('date','') }}</td>
+          <td style="text-align:right;" class="price-amber">${{ "%.0f"|format(a.get('price',0)) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Sourcing Deals -->
+  {% if sourcing.get('best_deals') %}
+  <div class="section">
+    <div class="section-title">Best Sourcing Deals Found</div>
+    {% for d in sourcing.best_deals[:6] %}
+    <div class="deal-row">
+      <div>
+        <div class="deal-title">{{ d.get('title','—') }}</div>
+        <div class="deal-platform">{{ d.get('platform','') }} · {{ d.get('condition','') }}</div>
+      </div>
+      <div class="deal-price">${{ "%.0f"|format(d.get('price',0)) }}</div>
+    </div>
+    {% endfor %}
+    {% if sourcing.get('sourcing_notes') %}
+    <div style="padding:10px 16px;font-size:11px;color:#666;background:#fffbf0;border-top:1px solid #f3f4f6;">{{ sourcing.sourcing_notes }}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Similar Items -->
+  {% if sourcing.get('similar_by_style') %}
+  <div class="section">
+    <div class="section-title">Similar Items by Style</div>
+    <table class="data-table">
+      <thead><tr><th>Item</th><th>Platform</th><th>Why Similar</th><th style="text-align:right;">Price</th></tr></thead>
+      <tbody>
+        {% for item in sourcing.similar_by_style[:5] %}
+        <tr>
+          <td>{{ item.get('item','') }}</td>
+          <td>{{ item.get('platform','') }}</td>
+          <td style="color:#666;">{{ item.get('why_similar','') }}</td>
+          <td style="text-align:right;" class="price-indigo">${{ "%.0f"|format(item.get('price',0)) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Listing Tips -->
+  {% if arb.get('listing_tips') %}
+  <div class="section">
+    <div class="section-title">How to List This Item</div>
+    <div class="tips-list">
+      {% for tip in arb.listing_tips %}
+      <div class="tip-item"><span class="tip-dot">›</span><span>{{ tip }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-brand">flipafind.com</div>
+    <div class="footer-disclaimer">Figures are based on sold transaction data and AI estimates. Verify live listings before buying or selling. This report is for informational purposes only.</div>
+  </div>
+
+</div>
+</body>
+</html>

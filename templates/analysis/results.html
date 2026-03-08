@@ -61,16 +61,45 @@
     {% endfor %}
   {% endif %}
 
-  <!-- Share bar (only for the analysis owner, not public view) -->
+  <!-- Action bar (only for the analysis owner, not public view) -->
   {% if not public_view|default(false) %}
-  <div class="flex items-center justify-between mb-4 px-1">
+  <div class="flex items-center justify-between mb-4 px-1 gap-3 flex-wrap">
     <p class="text-[#52526a] text-xs">{{ analysis.created_at.strftime('%d %b %Y · %H:%M') }}</p>
-    <button id="share-btn" onclick="toggleShare({{ analysis.id }})"
-      class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all duration-200
-             {% if analysis.is_public %}bg-emerald-500/15 border-emerald-500/30 text-emerald-400{% else %}bg-[#111118] border-[#252532] text-[#52526a] hover:border-indigo-500/50 hover:text-indigo-400{% endif %}">
-      <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
-      <span id="share-label">{% if analysis.is_public %}Shared — Copy Link{% else %}Share{% endif %}</span>
-    </button>
+    <div class="flex items-center gap-2">
+      {# Re-Analyse button #}
+      {% if analysis.input_type == 'link' %}
+        <form method="POST" action="{{ url_for('analysis.submit') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="link" value="{{ analysis.raw_input }}">
+          <button type="submit"
+            class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border bg-[#111118] border-[#252532] text-[#52526a] hover:border-indigo-500/50 hover:text-indigo-400 transition-all duration-200">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Re-Analyse
+          </button>
+        </form>
+      {% elif analysis.input_type == 'text' %}
+        <form method="POST" action="{{ url_for('analysis.submit') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="description" value="{{ analysis.raw_input }}">
+          <button type="submit"
+            class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border bg-[#111118] border-[#252532] text-[#52526a] hover:border-indigo-500/50 hover:text-indigo-400 transition-all duration-200">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Re-Analyse
+          </button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('analysis.input_page') }}"
+          class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border bg-[#111118] border-[#252532] text-[#52526a] hover:border-indigo-500/50 hover:text-indigo-400 transition-all duration-200"
+          title="Re-upload your photo to refresh prices">
+          <i data-lucide="camera" class="w-3.5 h-3.5"></i> Re-Analyse Photo
+        </a>
+      {% endif %}
+      {# Share button #}
+      <button id="share-btn" onclick="toggleShare({{ analysis.id }})"
+        class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all duration-200
+               {% if analysis.is_public %}bg-emerald-500/15 border-emerald-500/30 text-emerald-400{% else %}bg-[#111118] border-[#252532] text-[#52526a] hover:border-indigo-500/50 hover:text-indigo-400{% endif %}">
+        <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+        <span id="share-label">{% if analysis.is_public %}Shared — Copy Link{% else %}Share{% endif %}</span>
+      </button>
+    </div>
   </div>
   {% endif %}
 
@@ -79,6 +108,169 @@
     <i data-lucide="check" class="w-4 h-4"></i>
     <span>Link copied to clipboard!</span>
   </div>
+
+  <!-- View Tabs -->
+  <div class="flex gap-2 mb-6">
+    <button id="tab-detailed" onclick="switchView('detailed')"
+      class="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white">
+      Detailed View
+    </button>
+    <button id="tab-simple" onclick="switchView('simple')"
+      class="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-[#111118] border border-[#252532] text-[#52526a] hover:border-indigo-500/40 hover:text-indigo-400">
+      Simple View
+    </button>
+  </div>
+
+  <!-- ═══ SIMPLE VIEW ═══ -->
+  <div id="simple-view" class="hidden">
+    {% set tnp = arb.get("true_net_profit", arb.get("net_profit",0) - arb.get("shipping_cost_est",10)) %}
+    {% if roi >= 50 %}
+      {% set sv_color = "emerald" %}{% set sv_text = "Worth Flipping!" %}{% set sv_emoji = "🟢" %}
+    {% elif roi >= 0 %}
+      {% set sv_color = "amber" %}{% set sv_text = "Maybe Worth It" %}{% set sv_emoji = "🟡" %}
+    {% else %}
+      {% set sv_color = "red" %}{% set sv_text = "Skip This One" %}{% set sv_emoji = "🔴" %}
+    {% endif %}
+
+    <!-- Verdict Banner -->
+    <div class="card p-8 mb-6 text-center bg-{{ sv_color }}-500/10 border border-{{ sv_color }}-500/25">
+      <div class="text-5xl mb-3">{{ sv_emoji }}</div>
+      <div class="font-heading font-extrabold text-3xl text-{{ sv_color }}-400 mb-1">{{ sv_text }}</div>
+      <div class="text-[#f1f5f9]/60 text-sm">{{ arb.get("recommendation", "") }}</div>
+    </div>
+
+    <!-- Buy → Sell → Pocket Flow -->
+    <div class="grid grid-cols-3 gap-3 mb-6">
+      <div class="card p-5 text-center">
+        <div class="text-[#52526a] text-xs font-semibold uppercase tracking-wider mb-2">Buy for</div>
+        <div class="font-heading font-extrabold text-3xl text-[#f1f5f9]">${{ "%.0f"|format(arb.get("buy_price",0)) }}</div>
+        <div class="text-[#52526a] text-xs mt-1">your cost</div>
+      </div>
+      <div class="flex items-center justify-center">
+        <div class="text-2xl text-indigo-400 font-bold">→</div>
+      </div>
+      <div class="card p-5 text-center">
+        <div class="text-[#52526a] text-xs font-semibold uppercase tracking-wider mb-2">Sell for</div>
+        <div class="font-heading font-extrabold text-3xl text-[#f1f5f9]">${{ "%.0f"|format(arb.get("sell_price",0)) }}</div>
+        <div class="text-[#52526a] text-xs mt-1">recommended price</div>
+      </div>
+    </div>
+
+    <!-- Profit Hero -->
+    <div class="card p-8 text-center mb-6 border border-{{ sv_color }}-500/30">
+      <div class="text-[#52526a] text-sm mb-1">You pocket</div>
+      <div class="font-heading font-extrabold text-6xl text-{{ sv_color }}-400 mb-1">${{ "%.0f"|format(tnp) }}</div>
+      <div class="text-[#52526a] text-sm">after fees &amp; estimated shipping</div>
+      <div class="mt-3 inline-block bg-{{ sv_color }}-500/15 text-{{ sv_color }}-400 text-sm font-bold px-4 py-1 rounded-full">
+        {{ "%.0f"|format(roi) }}% return on investment
+      </div>
+    </div>
+
+    <!-- Best Platform + Quick Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <div class="card p-5">
+        <div class="text-[#52526a] text-xs font-semibold uppercase tracking-wider mb-3">Best place to sell</div>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+            <i data-lucide="store" class="w-5 h-5 text-indigo-400"></i>
+          </div>
+          <div>
+            <div class="font-heading font-bold text-xl text-indigo-400">{{ arb.get("best_platform","—") }}</div>
+            <div class="text-[#52526a] text-xs">highest profit after fees</div>
+          </div>
+        </div>
+      </div>
+      <div class="card p-5">
+        <div class="text-[#52526a] text-xs font-semibold uppercase tracking-wider mb-3">Demand right now</div>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+            <i data-lucide="activity" class="w-5 h-5 text-purple-400"></i>
+          </div>
+          <div>
+            <div class="font-heading font-bold text-xl text-[#f1f5f9]">{{ arb.get("opportunity_score",0) }}<span class="text-[#52526a] text-sm">/100</span></div>
+            <div class="text-[#52526a] text-xs">opportunity score</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Simple Checks -->
+    <div class="card p-6 mb-6">
+      <div class="text-[#52526a] text-xs font-semibold uppercase tracking-wider mb-4">Things to know</div>
+      <ul class="space-y-3">
+        {% if tnp > 0 %}
+        <li class="flex items-start gap-3 text-sm">
+          <span class="text-emerald-400 text-lg flex-shrink-0 leading-5">✅</span>
+          <span class="text-[#f1f5f9]/80">You'll make money on this flip — <strong class="text-emerald-400">${{ "%.0f"|format(tnp) }} profit</strong> after all costs.</span>
+        </li>
+        {% else %}
+        <li class="flex items-start gap-3 text-sm">
+          <span class="text-red-400 text-lg flex-shrink-0 leading-5">❌</span>
+          <span class="text-[#f1f5f9]/80">This flip doesn't look profitable at current prices. You may lose money.</span>
+        </li>
+        {% endif %}
+        {% if pricing.get("price_trend","").lower() == "rising" %}
+        <li class="flex items-start gap-3 text-sm">
+          <span class="text-emerald-400 text-lg flex-shrink-0 leading-5">✅</span>
+          <span class="text-[#f1f5f9]/80">Prices for this item are <strong class="text-emerald-400">going up</strong> — good time to flip.</span>
+        </li>
+        {% elif pricing.get("price_trend","").lower() == "falling" %}
+        <li class="flex items-start gap-3 text-sm">
+          <span class="text-amber-400 text-lg flex-shrink-0 leading-5">⚠️</span>
+          <span class="text-[#f1f5f9]/80">Prices are <strong class="text-amber-400">trending down</strong> — sell quickly before values drop further.</span>
+        </li>
+        {% else %}
+        <li class="flex items-start gap-3 text-sm">
+          <span class="text-indigo-400 text-lg flex-shrink-0 leading-5">ℹ️</span>
+          <span class="text-[#f1f5f9]/80">Price is <strong class="text-indigo-400">stable</strong> right now — no urgency, but don't sit on it too long.</span>
+        </li>
+        {% endif %}
+        {% if arb.get("opportunity_score",0) >= 70 %}
+        <li class="flex items-start gap-3 text-sm">
+          <span class="text-emerald-400 text-lg flex-shrink-0 leading-5">✅</span>
+          <span class="text-[#f1f5f9]/80"><strong class="text-emerald-400">High demand</strong> — this type of item sells fast right now.</span>
+        </li>
+        {% elif arb.get("opportunity_score",0) < 40 %}
+        <li class="flex items-start gap-3 text-sm">
+          <span class="text-amber-400 text-lg flex-shrink-0 leading-5">⚠️</span>
+          <span class="text-[#f1f5f9]/80"><strong class="text-amber-400">Slower market</strong> — it may take a while to find a buyer. Be patient.</span>
+        </li>
+        {% endif %}
+        <li class="flex items-start gap-3 text-sm">
+          <span class="text-indigo-400 text-lg flex-shrink-0 leading-5">💡</span>
+          <span class="text-[#f1f5f9]/80">Don't forget to factor in your time — listing, packaging, and posting all take effort.</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Top 3 Tips -->
+    {% if arb.get("listing_tips") %}
+    <div class="card p-6 mb-6" style="border-top:3px solid rgba(99,102,241,0.4)">
+      <div class="flex items-center gap-2 mb-4">
+        <i data-lucide="lightbulb" class="w-4 h-4 text-indigo-400"></i>
+        <div class="font-heading font-bold text-base">3 tips to sell it fast</div>
+      </div>
+      <ul class="space-y-3">
+        {% for tip in arb.listing_tips[:3] %}
+        <li class="flex items-start gap-3 text-sm text-[#f1f5f9]/80">
+          <span class="bg-indigo-500/20 text-indigo-400 font-bold text-xs w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">{{ loop.index }}</span>
+          <span>{{ tip }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Switch to detailed nudge -->
+    <p class="text-center text-[#52526a] text-xs mt-4">
+      Want the full breakdown?
+      <button onclick="switchView('detailed')" class="text-indigo-400 hover:underline">Switch to Detailed View →</button>
+    </p>
+  </div>
+  <!-- ═══ END SIMPLE VIEW ═══ -->
+
+  <!-- ═══ DETAILED VIEW ═══ -->
+  <div id="detailed-view">
 
   <!-- Arbitrage Hero -->
   <div class="arbitrage-hero card p-8 mb-8">
@@ -207,7 +399,7 @@
         <div class="font-bold {% if p.net_profit > 0 %}text-emerald-400{% else %}text-red-400{% endif %} text-lg">
           ${{ "%.2f"|format(p.net_profit) }}
         </div>
-        <div class="text-xs text-[#52526a]">{{ "%.0f"|format(p.net_roi) }}% ROI</div>
+        <div class="text-xs text-[#52526a]">{{ "%.0f"|format(p.net_roi | default(0)) }}% ROI</div>
       </div>
       {% endfor %}
     </div>
@@ -230,7 +422,9 @@
   <div class="card p-6 mb-8" style="border-top:3px solid rgba(59,130,246,0.6);">
     <div class="flex items-center justify-between mb-5">
       <h2 class="font-heading font-bold text-lg">Product Details</h2>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        {% set cat, cat_color = analysis.get_category() %}
+        <span class="text-[10px] bg-{{ cat_color }}-500/15 text-{{ cat_color }}-400 border border-{{ cat_color }}-500/30 px-2 py-0.5 rounded-full">{{ cat }}</span>
         {% if extracted.get("limited_edition") %}
         <span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold px-2 py-0.5 rounded-full">Limited Edition</span>
         {% endif %}
@@ -620,61 +814,84 @@
   </div>
   {% endif %}
 
-  <!-- Community Buzz -->
-  {% if social and (social.get("reddit") or social.get("youtube")) %}
-  <div class="card p-6 mb-8" style="border-top:3px solid rgba(249,115,22,0.6);">
-    <div class="flex items-center gap-3 mb-5">
-      <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0">
-        <i data-lucide="message-circle" class="w-4 h-4 text-orange-400"></i>
+  <!-- Community Buzz — Pro/Premium only -->
+  {% if current_user.subscription_tier in ('pro','premium') or current_user.is_admin %}
+    {% if social and (social.get("reddit") or social.get("youtube")) %}
+    <div class="card p-6 mb-8" style="border-top:3px solid rgba(249,115,22,0.6);">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="message-circle" class="w-4 h-4 text-orange-400"></i>
+        </div>
+        <h2 class="font-heading font-bold text-lg">Community Buzz</h2>
       </div>
-      <h2 class="font-heading font-bold text-lg">Community Buzz</h2>
-    </div>
 
-    {% if social.get("reddit") %}
-    <h3 class="font-semibold text-sm text-[#f1f5f9]/60 mb-3 flex items-center gap-2">
-      <svg class="w-4 h-4 text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
-      Reddit Discussions
-    </h3>
-    <div class="space-y-2 mb-5">
-      {% for post in social.reddit[:5] %}
-      <a href="{{ post.link }}" target="_blank" rel="noopener"
-        class="block bg-[#111118] border border-[#252532] hover:border-orange-500/40 rounded-xl px-4 py-3 text-sm transition-colors">
-        <div class="flex items-center gap-2 mb-1">
-          <div class="font-medium text-[#f1f5f9] line-clamp-1 flex-1">{{ post.title }}</div>
-          {% if post.get("subreddit") %}
-          <span class="text-[#52526a] text-xs flex-shrink-0">{{ post.subreddit }}</span>
+      {% if social.get("reddit") %}
+      <h3 class="font-semibold text-sm text-[#f1f5f9]/60 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+        Reddit Discussions
+      </h3>
+      <div class="space-y-2 mb-5">
+        {% for post in social.reddit[:5] %}
+        <a href="{{ post.link }}" target="_blank" rel="noopener"
+          class="block bg-[#111118] border border-[#252532] hover:border-orange-500/40 rounded-xl px-4 py-3 text-sm transition-colors">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="font-medium text-[#f1f5f9] line-clamp-1 flex-1">{{ post.title }}</div>
+            {% if post.get("subreddit") %}
+            <span class="text-[#52526a] text-xs flex-shrink-0">{{ post.subreddit }}</span>
+            {% endif %}
+          </div>
+          {% if post.snippet %}
+          <div class="text-[#52526a] text-xs line-clamp-2">{{ post.snippet }}</div>
           {% endif %}
-        </div>
-        {% if post.snippet %}
-        <div class="text-[#52526a] text-xs line-clamp-2">{{ post.snippet }}</div>
-        {% endif %}
-      </a>
-      {% endfor %}
-    </div>
-    {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
 
-    {% if social.get("youtube") %}
-    <h3 class="font-semibold text-sm text-[#f1f5f9]/60 mb-3 flex items-center gap-2">
-      <svg class="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
-      YouTube Videos
-    </h3>
-    <div class="grid grid-cols-2 gap-3">
-      {% for v in social.youtube[:4] %}
-      <a href="{{ v.link }}" target="_blank" rel="noopener"
-        class="bg-[#111118] border border-[#252532] hover:border-red-500/40 rounded-xl overflow-hidden transition-colors">
-        {% if v.thumbnail %}
-        <div class="w-full aspect-video bg-[#0a0a0f] overflow-hidden">
-          <img src="{{ v.thumbnail }}" alt="" class="w-full h-full object-cover">
-        </div>
-        {% endif %}
-        <div class="p-3">
-          <div class="text-xs font-medium text-[#f1f5f9] line-clamp-2 mb-1">{{ v.title }}</div>
-          <div class="text-[#52526a] text-xs">{{ v.channel }}{% if v.views %} · {{ v.views }}{% endif %}</div>
-        </div>
-      </a>
-      {% endfor %}
+      {% if social.get("youtube") %}
+      <h3 class="font-semibold text-sm text-[#f1f5f9]/60 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+        YouTube Videos
+      </h3>
+      <div class="grid grid-cols-2 gap-3">
+        {% for v in social.youtube[:4] %}
+        <a href="{{ v.link }}" target="_blank" rel="noopener"
+          class="bg-[#111118] border border-[#252532] hover:border-red-500/40 rounded-xl overflow-hidden transition-colors">
+          {% if v.thumbnail %}
+          <div class="w-full aspect-video bg-[#0a0a0f] overflow-hidden">
+            <img src="{{ v.thumbnail }}" alt="" class="w-full h-full object-cover">
+          </div>
+          {% endif %}
+          <div class="p-3">
+            <div class="text-xs font-medium text-[#f1f5f9] line-clamp-2 mb-1">{{ v.title }}</div>
+            <div class="text-[#52526a] text-xs">{{ v.channel }}{% if v.views %} · {{ v.views }}{% endif %}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
     {% endif %}
+  {% else %}
+  <!-- Community Buzz locked teaser for free users -->
+  <div class="card p-6 mb-8 relative overflow-hidden" style="border-top:3px solid rgba(249,115,22,0.3);">
+    <div class="absolute inset-0 bg-[#09090f]/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center gap-3">
+      <i data-lucide="lock" class="w-6 h-6 text-orange-400"></i>
+      <p class="text-sm font-semibold text-[#f1f5f9]">Community Buzz — Pro feature</p>
+      <p class="text-xs text-[#52526a] text-center max-w-xs">See Reddit discussions and YouTube videos about this exact product. Upgrade to Pro to unlock.</p>
+      <a href="{{ url_for('billing.pricing') }}" class="btn-primary px-5 py-2 text-sm mt-1">Upgrade to Pro</a>
+    </div>
+    <div class="opacity-20 pointer-events-none select-none">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+          <i data-lucide="message-circle" class="w-4 h-4 text-orange-400"></i>
+        </div>
+        <h2 class="font-heading font-bold text-lg">Community Buzz</h2>
+      </div>
+      <div class="space-y-2">
+        {% for _ in range(3) %}<div class="bg-[#111118] rounded-xl px-4 py-3 h-12"></div>{% endfor %}
+      </div>
+    </div>
   </div>
   {% endif %}
 
@@ -689,27 +906,18 @@
       <i data-lucide="plus" class="w-4 h-4 mr-2 inline"></i> New Analysis
     </a>
     <a href="{{ url_for("dashboard.home") }}" class="btn-outline px-6 py-3">Dashboard</a>
-    <button onclick="downloadPDF()" class="btn-outline px-6 py-3 flex items-center gap-2">
-      <i data-lucide="download" class="w-4 h-4"></i> Download PDF Report
-    </button>
+    {% if current_user.subscription_tier == 'premium' or current_user.is_admin %}
+    <a href="{{ url_for('analysis.export', id=analysis.id) }}" target="_blank" class="btn-outline px-6 py-3 flex items-center gap-2">
+      <i data-lucide="download" class="w-4 h-4"></i> Export PDF Report
+    </a>
+    {% else %}
+    <a href="{{ url_for('billing.pricing') }}" class="btn-outline px-6 py-3 flex items-center gap-2 opacity-60">
+      <i data-lucide="lock" class="w-4 h-4"></i> Export PDF <span class="text-xs ml-1">(Premium)</span>
+    </a>
+    {% endif %}
   </div>
 
-  <!-- Hidden PDF header — visible only in generated PDF -->
-  <div id="pdf-header" style="display:none; font-family:sans-serif; padding:24px 0 16px; border-bottom:2px solid #6366f1; margin-bottom:24px;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <div style="font-size:22px; font-weight:900; color:#6366f1; letter-spacing:-0.5px;">FlipAFind</div>
-        <div style="font-size:11px; color:#888; margin-top:2px;">AI-Powered Resale Intelligence</div>
-      </div>
-      <div style="text-align:right; font-size:11px; color:#888;">
-        <div>{{ analysis.created_at.strftime('%d %B %Y') }}</div>
-        <div style="margin-top:2px;">flipafind.com</div>
-      </div>
-    </div>
-    <div style="margin-top:12px; font-size:15px; font-weight:700; color:#1a1a2e;">
-      Flip Analysis Report — {{ extracted.get('brand','') }} {{ extracted.get('model','') }}
-    </div>
-  </div>
+  </div><!-- ═══ END DETAILED VIEW ═══ -->
 
   {% endif %}
 </div>
@@ -727,39 +935,6 @@
     });
     lucide.createIcons();
   });
-
-  // PDF download
-  async function downloadPDF() {
-    const btn = event.currentTarget;
-    btn.textContent = 'Generating PDF…';
-    btn.disabled = true;
-
-    const header = document.getElementById('pdf-header');
-    header.style.display = 'block';
-
-    // Hide interactive elements from PDF
-    const hideEls = document.querySelectorAll('.no-pdf');
-    hideEls.forEach(el => el.style.display = 'none');
-
-    const content = document.querySelector('.max-w-5xl');
-    const opt = {
-      margin:      [12, 10, 12, 10],
-      filename:    'flipafind-report-{{ analysis.id }}.pdf',
-      image:       { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-      jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    try {
-      await html2pdf().set(opt).from(content).save();
-    } finally {
-      header.style.display = 'none';
-      hideEls.forEach(el => el.style.display = '');
-      btn.innerHTML = '<i data-lucide="download" class="w-4 h-4"></i> Download PDF Report';
-      btn.disabled = false;
-      lucide.createIcons();
-    }
-  }
 
   // Share link toggle
   let _isPublic = {{ 'true' if analysis.is_public else 'false' }};
@@ -804,6 +979,25 @@
     toast.classList.remove('hidden');
     setTimeout(() => toast.classList.add('hidden'), 3000);
   }
+
+  function switchView(view) {
+    const simple = document.getElementById('simple-view');
+    const detailed = document.getElementById('detailed-view');
+    const tabSimple = document.getElementById('tab-simple');
+    const tabDetailed = document.getElementById('tab-detailed');
+    const activeClass = ['bg-indigo-600','text-white'];
+    const inactiveClass = ['bg-[#111118]','border','border-[#252532]','text-[#52526a]'];
+    if (view === 'simple') {
+      simple.classList.remove('hidden');
+      detailed.classList.add('hidden');
+      tabSimple.className = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white';
+      tabDetailed.className = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-[#111118] border border-[#252532] text-[#52526a] hover:border-indigo-500/40 hover:text-indigo-400';
+    } else {
+      simple.classList.add('hidden');
+      detailed.classList.remove('hidden');
+      tabDetailed.className = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white';
+      tabSimple.className = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-[#111118] border border-[#252532] text-[#52526a] hover:border-indigo-500/40 hover:text-indigo-400';
+    }
+  }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 {% endblock %}

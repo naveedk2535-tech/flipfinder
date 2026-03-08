@@ -249,3 +249,36 @@ def clear_visitors():
     db.session.commit()
     flash(f'Deleted {deleted} visitor records.', 'success')
     return redirect(url_for('admin.visitors'))
+
+
+@admin_bp.route('/api-usage')
+@admin_required
+def api_usage():
+    import os, requests as req
+    from utils.api_tracker import get_today_stats, get_history
+
+    stats = get_today_stats()
+    history = get_history(7)
+
+    # Live SerpAPI account query for remaining searches
+    serpapi_live = {}
+    for i, env_var in enumerate(['SERPAPI_KEY', 'SERPAPI_KEY_2'], 1):
+        key = os.environ.get(env_var, '')
+        if key:
+            try:
+                r = req.get('https://serpapi.com/account.json', params={'api_key': key}, timeout=5)
+                if r.status_code == 200:
+                    data = r.json()
+                    serpapi_live[f'key{i}'] = {
+                        'plan': data.get('plan_name', 'unknown'),
+                        'searches_used': data.get('total_searches_used', 0),
+                        'plan_searches': data.get('plan_searches', 0),
+                        'remaining': data.get('plan_searches_left', 0),
+                    }
+            except Exception:
+                pass
+
+    from datetime import timezone
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    return render_template('admin/api_usage.html',
+                           stats=stats, history=history, serpapi_live=serpapi_live, today=today)

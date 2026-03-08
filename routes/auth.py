@@ -25,6 +25,7 @@ def _send_verification_email(user):
     link  = url_for('auth.verify_email', token=token, _external=True)
     msg   = Message('Verify your FlipAFind account', recipients=[user.email])
     msg.body = (
+        f"⚠️  SEEING THIS IN SPAM? Mark it 'Not Spam' then refresh your inbox.\n\n"
         f"Hi {user.name},\n\n"
         f"Please verify your FlipAFind account by clicking (or copying) the link below:\n\n"
         f"{link}\n\n"
@@ -34,18 +35,33 @@ def _send_verification_email(user):
     )
     msg.html = f"""
     <div style="font-family:sans-serif;background:#09090f;color:#f1f5f9;padding:32px;">
-      <div style="max-width:480px;margin:auto;background:#1a1a28;border:1px solid #252532;
-                  border-radius:16px;padding:32px;">
-        <h2 style="color:#a5b4fc;margin:0 0 8px;">Confirm your email</h2>
-        <p style="color:#94a3b8;margin:0 0 20px;">
-          Hi {user.name}, click the link below to verify your email and activate your FlipAFind account.
-        </p>
-        <p style="margin:0 0 8px;">
-          <a href="{link}" style="color:#818cf8;word-break:break-all;">{link}</a>
-        </p>
-        <p style="color:#52526a;font-size:12px;margin-top:24px;">
-          Link expires in 24 hours. If you didn't sign up, ignore this email.
-        </p>
+      <div style="max-width:480px;margin:auto;">
+
+        <!-- Spam rescue banner -->
+        <div style="background:#7c3a00;border:2px solid #f97316;border-radius:12px;
+                    padding:20px 24px;margin-bottom:20px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.3px;">
+            📬 Is this email in your Spam folder?
+          </p>
+          <p style="margin:0;font-size:15px;color:#fed7aa;line-height:1.5;">
+            <strong>Step 1:</strong> Click <strong>"Not Spam"</strong> or <strong>"Mark as Safe"</strong><br>
+            <strong>Step 2:</strong> Go back to your <strong>Inbox</strong> and refresh
+          </p>
+        </div>
+
+        <!-- Main card -->
+        <div style="background:#1a1a28;border:1px solid #252532;border-radius:16px;padding:32px;">
+          <h2 style="color:#a5b4fc;margin:0 0 8px;">Confirm your email</h2>
+          <p style="color:#94a3b8;margin:0 0 20px;">
+            Hi {user.name}, click the link below to verify your email and activate your FlipAFind account.
+          </p>
+          <p style="margin:0 0 8px;">
+            <a href="{link}" style="color:#818cf8;word-break:break-all;">{link}</a>
+          </p>
+          <p style="color:#52526a;font-size:12px;margin-top:24px;">
+            Link expires in 24 hours. If you didn't sign up, ignore this email.
+          </p>
+        </div>
       </div>
     </div>
     """
@@ -171,6 +187,26 @@ def verify_email(token):
     user.email_verified = True
     db.session.commit()
     login_user(user)
+
+    # Notify admin of new verified signup
+    try:
+        admin_msg = Message(
+            f'New user signed up: {user.name}',
+            recipients=['hello@zzi.ai']
+        )
+        admin_msg.body = f"New verified user:\n\nName: {user.name}\nEmail: {user.email}\nSigned up: {user.created_at.strftime('%Y-%m-%d %H:%M')} UTC"
+        admin_msg.html = f"""
+        <div style="font-family:sans-serif;padding:24px;background:#09090f;color:#f1f5f9;">
+          <div style="max-width:420px;margin:auto;background:#1a1a28;border:1px solid #252532;border-radius:12px;padding:24px;">
+            <h2 style="color:#a5b4fc;margin:0 0 12px;">🎉 New user verified</h2>
+            <p style="margin:4px 0;color:#94a3b8;"><strong style="color:#f1f5f9;">Name:</strong> {user.name}</p>
+            <p style="margin:4px 0;color:#94a3b8;"><strong style="color:#f1f5f9;">Email:</strong> {user.email}</p>
+            <p style="margin:4px 0;color:#94a3b8;"><strong style="color:#f1f5f9;">Joined:</strong> {user.created_at.strftime('%Y-%m-%d %H:%M')} UTC</p>
+          </div>
+        </div>"""
+        mail.send(admin_msg)
+    except Exception as e:
+        current_app.logger.error(f"Admin signup notification failed: {e}")
 
     # If they chose a paid plan at signup, send them to pricing to complete checkout
     signup_plan = session.pop('signup_plan', None)

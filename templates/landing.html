@@ -11,18 +11,35 @@
   <!-- Money green glow orbs -->
   <div class="absolute top-[15%] right-[20%] w-[280px] h-[280px] bg-emerald-500/8 rounded-full blur-[90px] animate-pulse pointer-events-none" style="animation-delay:0.8s"></div>
   <div class="absolute bottom-[10%] left-[15%] w-[240px] h-[240px] bg-green-500/8 rounded-full blur-[80px] animate-pulse pointer-events-none" style="animation-delay:2.2s"></div>
-  <!-- Floating money emojis (decorative) -->
-  <div class="absolute pointer-events-none select-none hidden lg:block" style="top:8%;left:12%;animation:floatY 6s ease-in-out infinite;opacity:0.12;font-size:1.5rem;" aria-hidden="true">💰</div>
-  <div class="absolute pointer-events-none select-none hidden lg:block" style="top:55%;right:8%;animation:floatY 7s ease-in-out infinite;animation-delay:1s;opacity:0.10;font-size:1.2rem;" aria-hidden="true">💸</div>
-  <div class="absolute pointer-events-none select-none hidden xl:block" style="top:30%;left:6%;animation:floatY 5s ease-in-out infinite;animation-delay:2s;opacity:0.10;font-size:1rem;" aria-hidden="true">🤑</div>
-  <div class="absolute pointer-events-none select-none hidden xl:block" style="bottom:20%;right:12%;animation:floatY 8s ease-in-out infinite;animation-delay:0.5s;opacity:0.09;font-size:1.3rem;" aria-hidden="true">💵</div>
-  <div class="absolute pointer-events-none select-none hidden xl:block" style="top:70%;left:22%;animation:floatY 6.5s ease-in-out infinite;animation-delay:3s;opacity:0.08;font-size:1.1rem;" aria-hidden="true">📈</div>
-  <style>
-    @keyframes floatY {
-      0%,100% { transform: translateY(0px) rotate(-3deg); }
-      50%      { transform: translateY(-18px) rotate(3deg); }
-    }
-  </style>
+  <!-- Animated chart lines (decorative background) -->
+  <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="lg1" x1="0" y1="0" x2="1440" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0%"   stop-color="#6366f1" stop-opacity="0"/>
+        <stop offset="20%"  stop-color="#6366f1" stop-opacity="0.25"/>
+        <stop offset="80%"  stop-color="#a855f7" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="lg2" x1="0" y1="0" x2="1440" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0%"   stop-color="#10b981" stop-opacity="0"/>
+        <stop offset="20%"  stop-color="#10b981" stop-opacity="0.16"/>
+        <stop offset="80%"  stop-color="#6366f1" stop-opacity="0.16"/>
+        <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="ag" x1="0" y1="0" x2="0" y2="900" gradientUnits="userSpaceOnUse">
+        <stop offset="0%"   stop-color="#6366f1" stop-opacity="0.07"/>
+        <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <!-- Area fill -->
+    <polygon points="0,560 180,460 320,480 460,380 600,400 740,300 880,330 1020,240 1160,260 1300,170 1440,140 1440,900 0,900" fill="url(#ag)"/>
+    <!-- Main upward trend line -->
+    <polyline points="0,560 180,460 320,480 460,380 600,400 740,300 880,330 1020,240 1160,260 1300,170 1440,140"
+      fill="none" stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Secondary dashed line -->
+    <polyline points="0,680 180,620 320,635 460,575 600,590 740,530 880,545 1020,490 1160,505 1300,455 1440,440"
+      fill="none" stroke="url(#lg2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="12 7"/>
+  </svg>
 
   <!-- Floating background product cards (decorative, lg+ only) -->
   <div class="absolute top-[12%] right-[3%] opacity-[0.13] pointer-events-none select-none hidden lg:block" style="transform: rotate(7deg);" aria-hidden="true">
@@ -98,7 +115,7 @@
 
     <!-- Subheadline -->
     <p class="text-lg sm:text-xl text-[#f1f5f9]/55 max-w-2xl mx-auto mb-10 leading-relaxed text-center">
-      Describe any item or paste a URL. AI researches sold prices, auction results, and cheaper sources — delivering exact flip numbers in seconds.
+      Snap a photo, paste a URL, or describe any item. AI researches sold prices and cheaper sources — delivering flip numbers in seconds.
     </p>
 
     <!-- CTAs -->
@@ -210,7 +227,7 @@
         <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> ROI tracked
       </div>
       <div class="absolute left-0 lg:-left-8 -bottom-5 lg:bottom-8 flex items-center gap-1.5 bg-indigo-500/15 border border-indigo-500/25 text-indigo-300 text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm">
-        <i data-lucide="search" class="w-3.5 h-3.5"></i> 14 platforms searched
+        <i data-lucide="search" class="w-3.5 h-3.5"></i> 10+ platforms searched
       </div>
     </div>
   </div>
@@ -286,7 +303,7 @@
 <!-- Platforms Marquee -->
 <section class="py-12 border-y border-[#252532] overflow-hidden">
   <div class="max-w-6xl mx-auto px-4 text-center mb-8">
-    <p class="text-[#52526a] text-xs uppercase tracking-[0.15em] font-semibold">Platforms We Research</p>
+    <p class="text-[#52526a] text-xs uppercase tracking-[0.15em] font-semibold">Platforms We Cover*</p>
   </div>
   <div class="marquee-wrapper">
     <div class="marquee-track gap-3 px-4" style="display: flex; gap: 0.75rem;">
@@ -305,6 +322,7 @@
       {% endfor %}
     </div>
   </div>
+  <p class="text-center text-[#52526a] text-xs mt-6">* Results sourced via AI-powered web search. Coverage varies by item type and market availability.</p>
 </section>
 
 <!-- Promo Banner -->
@@ -333,10 +351,14 @@
           <span class="text-[#52526a] text-sm mb-1">/month</span>
         </div>
         <p class="text-[#52526a] text-sm mb-6">Get started at no cost</p>
-        <ul class="space-y-2.5 text-sm text-[#f1f5f9]/65 mb-8">
-          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 3 analyses/month</li>
-          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Basic results</li>
-          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> eBay + Depop search</li>
+        <ul class="space-y-2.5 text-sm mb-8">
+          <li class="flex gap-2.5 items-start text-[#f1f5f9]/65"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 3 analyses/month</li>
+          <li class="flex gap-2.5 items-start text-[#f1f5f9]/65"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Full AI flip analysis</li>
+          <li class="flex gap-2.5 items-start text-[#f1f5f9]/65"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 10+ platforms searched</li>
+          <li class="flex gap-2.5 items-start text-[#f1f5f9]/65"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> ROI &amp; profit calculator</li>
+
+          <li class="flex gap-2.5 items-start text-[#52526a]"><i data-lucide="lock" class="w-4 h-4 flex-shrink-0 mt-0.5"></i> <span>Community buzz (Reddit + YouTube) <span class="text-xs">(Pro)</span></span></li>
+          <li class="flex gap-2.5 items-start text-[#52526a]"><i data-lucide="lock" class="w-4 h-4 flex-shrink-0 mt-0.5"></i> <span>Export reports as PDF <span class="text-xs">(Premium)</span></span></li>
         </ul>
         <a href="{{ url_for('auth.signup') }}" class="btn-outline w-full text-center py-2.5">Get Started</a>
       </div>
@@ -349,15 +371,16 @@
           <span class="font-heading font-extrabold text-4xl tracking-tight">$14.99</span>
           <span class="text-[#52526a] text-lg line-through">$29.99</span>
         </div>
-        <div class="text-xs mb-1"><span class="text-sm mb-1 text-[#52526a]">/month</span> <span class="text-orange-400 font-semibold">· lock in this rate forever</span></div>
-        <p class="text-[#52526a] text-sm mb-6">For serious resellers</p>
+        <div class="text-xs mb-1"><span class="text-sm mb-1 text-[#52526a]">/month</span></div>
+        <p class="text-emerald-400 text-xs mb-6">✓ 10-day free trial included</p>
         <ul class="space-y-2.5 text-sm text-[#f1f5f9]/65 mb-8">
           <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 50 analyses/month</li>
-          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> All 14 platforms searched</li>
-          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Auction house results</li>
+          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 10+ platforms searched</li>
           <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Similar item finder</li>
+          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Community buzz (Reddit + YouTube)</li>
+          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Trend &amp; social data</li>
         </ul>
-        <a href="{{ url_for('auth.signup') }}" class="btn-primary w-full text-center py-2.5">Start Pro</a>
+        <a href="{{ url_for('billing.pricing') }}" class="btn-primary w-full text-center py-2.5">Start Free Trial</a>
       </div>
       <!-- Premium -->
       <div class="pricing-card text-left">
@@ -366,14 +389,15 @@
           <span class="font-heading font-extrabold text-4xl tracking-tight">$39.99</span>
           <span class="text-[#52526a] text-sm mb-1">/month</span>
         </div>
-        <p class="text-[#52526a] text-sm mb-6">For power flippers</p>
+        <p class="text-emerald-400 text-xs mb-6">✓ 10-day free trial included</p>
         <ul class="space-y-2.5 text-sm text-[#f1f5f9]/65 mb-8">
-          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Unlimited analyses</li>
-          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Priority processing</li>
-          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Export to CSV</li>
-          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> API access</li>
+          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> 300 analyses/month</li>
+          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Photo-based item analysis</li>
+          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Export reports as PDF</li>
+          <li class="flex gap-2.5 items-start"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i> Everything in Pro</li>
         </ul>
-        <a href="{{ url_for('auth.signup') }}" class="btn-outline w-full text-center py-2.5">Go Premium</a>
+        <a href="{{ url_for('billing.pricing') }}" class="btn-outline w-full text-center py-2.5">Go Premium</a>
+        <p class="text-[#52526a] text-xs mt-3 text-center">Need more than 300/month? <a href="mailto:hello@zzi.ai" class="text-indigo-400 hover:underline">Contact us</a> for Enterprise.</p>
       </div>
     </div>
   </div>

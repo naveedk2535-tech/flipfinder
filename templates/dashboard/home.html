@@ -62,10 +62,43 @@
       </div>
     </div>
     <div class="stat-card">
-      <div class="text-[#52526a] text-sm mb-1">Best ROI Ever</div>
-      <div class="font-heading font-bold text-3xl {% if best_roi >= 100 %}text-emerald-400{% elif best_roi >= 50 %}text-amber-400{% else %}text-[#f1f5f9]{% endif %}">{{ "%.0f"|format(best_roi) }}%</div>
+      <div class="text-[#52526a] text-sm mb-1">Est. Profit This Month</div>
+      <div class="font-heading font-bold text-3xl {% if total_profit_month > 0 %}text-emerald-400{% elif total_profit_month < 0 %}text-red-400{% else %}text-[#f1f5f9]{% endif %}">
+        £{{ "%.0f"|format(total_profit_month) }}
+      </div>
     </div>
   </div>
+
+  {# ── Best Flips This Month ── #}
+  {% if top_flips %}
+  <div class="card p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-heading font-bold text-lg">🏆 Best Flips This Month</h2>
+      <a href="{{ url_for('dashboard.history', sort='roi') }}" class="text-sm text-indigo-400 hover:underline">Full history →</a>
+    </div>
+    <div class="space-y-2">
+      {% for a in top_flips %}
+      {% set roi = a.get_roi_value() %}
+      {% set roi_cls = a.get_roi_class() %}
+      {% set cat, cat_color = a.get_category() %}
+      <a href="{{ url_for('analysis.results', id=a.id) }}"
+         class="flex items-center gap-4 hover:bg-[#18181f] rounded-xl p-3 -mx-1 transition-colors">
+        <span class="text-xl font-bold text-[#252532] w-6 text-center shrink-0">{{ loop.index }}</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-[#f1f5f9] truncate text-sm">{{ a.get_product_summary() }}</div>
+          <span class="text-[10px] bg-{{ cat_color }}-500/15 text-{{ cat_color }}-400 border border-{{ cat_color }}-500/30 px-2 py-0.5 rounded-full">{{ cat }}</span>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="font-bold text-sm {% if roi_cls == 'success' %}text-emerald-400{% elif roi_cls == 'good' %}text-green-400{% elif roi_cls == 'warning' %}text-amber-400{% else %}text-red-400{% endif %}">
+            {{ "%.0f"|format(roi) }}% ROI
+          </div>
+          <div class="text-xs text-[#52526a]">{{ a.get_arbitrage().get('verdict', '') }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Recent Analyses -->
   <div class="card p-6">
@@ -86,7 +119,13 @@
             </div>
             <div class="flex-1 min-w-0">
               <div class="font-medium text-[#f1f5f9] truncate">{{ a.get_product_summary() }}</div>
-              <div class="text-[#52526a] text-xs mt-0.5">{{ a.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[#52526a] text-xs">{{ a.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+                {% if a.status == 'complete' %}
+                  {% set cat, cat_color = a.get_category() %}
+                  <span class="text-[10px] bg-{{ cat_color }}-500/15 text-{{ cat_color }}-400 border border-{{ cat_color }}-500/30 px-2 py-0.5 rounded-full">{{ cat }}</span>
+                {% endif %}
+              </div>
             </div>
             {% if a.status == 'complete' %}
               {% set roi = a.get_roi_value() %}

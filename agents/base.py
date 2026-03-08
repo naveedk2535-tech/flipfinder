@@ -156,6 +156,14 @@ def _add_tokens(count: int):
         pass  # Outside Flask context (e.g. testing)
 
 
+def _track(api: str, key_label: str, *, success: bool, quota_hit: bool, tokens: int = 0):
+    try:
+        from utils.api_tracker import record
+        record(api, key_label, success=success, quota_hit=quota_hit, tokens=tokens)
+    except Exception:
+        pass
+
+
 # Lazily-initialised client list — one entry per API key found in env
 _gemini_clients = None
 _groq_clients = None
@@ -298,18 +306,21 @@ def run_with_search(prompt: str, image_base64: str = None,
                     result = _call_gemini(client, model, parts, attempt_search, max_tokens=max_tokens)
                     if result:
                         logger.info(f"Gemini success: {model} ({key_label}, search={attempt_search})")
+                        _track('gemini', key_label, success=True, quota_hit=False)
                         return result
                 except Exception as e:
                     err = str(e)
                     is_quota = "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower()
                     if is_quota:
                         logger.warning(f"{model} {key_label} quota exceeded, trying next...")
+                        _track('gemini', key_label, success=False, quota_hit=True)
                         break  # try next key (or next model if no more keys)
                     elif attempt_search:
                         logger.warning(f"{model} {key_label} search error, retrying without: {e}")
                         continue  # retry without search on same key
                     else:
                         logger.warning(f"{model} {key_label} failed: {e}")
+                        _track('gemini', key_label, success=False, quota_hit=False)
                         break  # try next key
 
     # Final fallback: Groq with key rotation
@@ -318,11 +329,14 @@ def run_with_search(prompt: str, image_base64: str = None,
     for g_idx, groq_client in enumerate(groq_clients):
         try:
             logger.info(f"Using Groq llama-3.3-70b as fallback (key{g_idx + 1})")
-            return _call_groq(groq_client, prompt, max_tokens=max_tokens)
+            result = _call_groq(groq_client, prompt, max_tokens=max_tokens)
+            _track('groq', f'key{g_idx + 1}', success=True, quota_hit=False)
+            return result
         except Exception as e:
             err = str(e)
             is_quota = "429" in err or "rate_limit" in err.lower() or "quota" in err.lower()
             logger.error(f"Groq key{g_idx + 1} failed: {e}")
+            _track('groq', f'key{g_idx + 1}', success=False, quota_hit=is_quota)
             last_err = e
             if is_quota:
                 continue  # try next Groq key

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}API Usage — Admin{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-10">
+
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="font-heading font-bold text-2xl">API Usage Monitor</h1>
+      <p class="text-[#52526a] text-sm mt-1">Today's usage since UTC midnight (Gemini/Groq reset ~8 UTC daily)</p>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="text-sm text-[#52526a] hover:text-indigo-400">← Admin</a>
+  </div>
+
+  <!-- Today's API cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+    {% set card_order = ['gemini/key1','gemini/key2','groq/key1','groq/key2','serpapi/key1','serpapi/key2','youtube/key1','reddit/oauth'] %}
+    {% for slot in card_order %}
+      {% if slot in stats %}
+      {% set s = stats[slot] %}
+      {% set border_color = 'border-red-500/60' if s.at_limit else ('border-amber-500/40' if s.near_limit else 'border-[#252532]') %}
+      <div class="rounded-xl border {{ border_color }} p-5" style="background:#0d0d18;">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm font-semibold text-[#f1f5f9]/80">{{ s.label }}</span>
+          {% if s.at_limit %}
+            <span class="text-[10px] bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded-full font-bold">⚠ QUOTA HIT</span>
+          {% elif s.near_limit %}
+            <span class="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">NEAR LIMIT</span>
+          {% else %}
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">OK</span>
+          {% endif %}
+        </div>
+
+        <!-- Stats row -->
+        <div class="flex gap-4 mb-3 text-center">
+          <div class="flex-1">
+            <div class="font-bold text-xl {% if s.at_limit %}text-red-400{% elif s.near_limit %}text-amber-400{% else %}text-[#f1f5f9]{% endif %}">
+              {{ s.calls }}
+            </div>
+            <div class="text-[#52526a] text-xs">calls today</div>
+          </div>
+          <div class="flex-1">
+            <div class="font-bold text-xl {% if s.quota_hits > 0 %}text-red-400{% else %}text-[#f1f5f9]{% endif %}">
+              {{ s.quota_hits }}
+            </div>
+            <div class="text-[#52526a] text-xs">quota hits</div>
+          </div>
+          {% if s.tokens > 0 %}
+          <div class="flex-1">
+            <div class="font-bold text-xl text-[#f1f5f9]">{{ "{:,}".format(s.tokens) }}</div>
+            <div class="text-[#52526a] text-xs">tokens</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Progress bar (only when RPD limit known) -->
+        {% if s.rpd_limit %}
+        <div class="mb-2">
+          <div class="flex justify-between text-xs text-[#52526a] mb-1">
+            <span>{{ s.calls }} / {{ s.rpd_limit }} RPD</span>
+            <span>{{ s.pct_used }}%</span>
+          </div>
+          <div class="w-full bg-[#1a1a28] rounded-full h-2 overflow-hidden">
+            <div class="h-2 rounded-full transition-all duration-500
+              {% if s.at_limit %}bg-red-500{% elif s.near_limit %}bg-amber-400{% else %}bg-indigo-500{% endif %}"
+              style="width: {{ s.pct_used }}%"></div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- SerpAPI live data -->
+        {% if 'serpapi' in slot %}
+          {% set key_num = slot.split('/')[1] %}
+          {% if key_num in serpapi_live %}
+          {% set live = serpapi_live[key_num] %}
+          <div class="mt-2 pt-2 border-t border-[#1e1e2e] text-xs text-[#52526a]">
+            <span class="text-emerald-400 font-semibold">Live:</span>
+            {{ live.searches_used }} used · {{ live.remaining }} left · {{ live.plan }}
+          </div>
+          {% endif %}
+        {% endif %}
+
+        <div class="text-[10px] text-[#3a3a52] mt-2">{{ s.note }}</div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- 7-day history table -->
+  <div class="rounded-xl border border-[#252532] overflow-hidden" style="background:#0d0d18;">
+    <div class="px-5 py-4 border-b border-[#252532]">
+      <h2 class="font-semibold text-sm">7-Day History (all APIs combined)</h2>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-[#252532] text-[#52526a] text-xs uppercase tracking-wider">
+          <th class="px-5 py-3 text-left">Date</th>
+          <th class="px-5 py-3 text-right">Total Calls</th>
+          <th class="px-5 py-3 text-right">Quota Hits</th>
+          <th class="px-5 py-3 text-right">Tokens Used</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in history | reverse %}
+        <tr class="border-b border-[#1a1a28] hover:bg-[#111118] transition-colors
+          {% if row.quota_hits > 0 %}text-amber-400{% else %}text-[#f1f5f9]/70{% endif %}">
+          <td class="px-5 py-3 font-mono">
+            {{ row.date }}
+            {% if row.date == today %}
+              <span class="text-xs text-indigo-400 ml-1">(today)</span>
+            {% endif %}
+          </td>
+          <td class="px-5 py-3 text-right">{{ row.calls }}</td>
+          <td class="px-5 py-3 text-right">
+            {% if row.quota_hits > 0 %}
+              <span class="text-red-400 font-bold">{{ row.quota_hits }}</span>
+            {% else %}0{% endif %}
+          </td>
+          <td class="px-5 py-3 text-right font-mono">{{ "{:,}".format(row.tokens) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="px-5 py-8 text-center text-[#52526a]">No data yet — usage will appear after the first analysis.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-[#3a3a52] text-xs mt-4 text-center">
+    Gemini free limits: 2.0-flash 1500/day · 2.5-flash 500/day · 2.0-flash-lite 1500/day &nbsp;|&nbsp;
+    Groq free: 14,400 req/day · 500K tokens/day &nbsp;|&nbsp;
+    Data resets UTC midnight
+  </p>
+</div>
+{% endblock %}
