@@ -131,13 +131,13 @@
           <p class="text-xs text-[#52526a] mb-4">Instant fee estimate — no AI, no API. Enter prices to see your net profit across platforms.</p>
           <div class="grid grid-cols-2 gap-3 mb-4">
             <div>
-              <label class="block text-xs text-[#52526a] mb-1.5">Buy Price (£)</label>
+              <label class="block text-xs text-[#52526a] mb-1.5">Buy Price ($)</label>
               <input type="number" id="calc-buy" min="0" step="0.01" placeholder="0.00"
                 class="w-full bg-[#111118] border border-[#2a2a3a] focus:border-indigo-500 rounded-xl px-4 py-3 text-sm text-[#f1f5f9] placeholder-[#3a3a52] outline-none transition-all"
                 oninput="runCalc()">
             </div>
             <div>
-              <label class="block text-xs text-[#52526a] mb-1.5">Sell Price (£)</label>
+              <label class="block text-xs text-[#52526a] mb-1.5">Sell Price ($)</label>
               <input type="number" id="calc-sell" min="0" step="0.01" placeholder="0.00"
                 class="w-full bg-[#111118] border border-[#2a2a3a] focus:border-indigo-500 rounded-xl px-4 py-3 text-sm text-[#f1f5f9] placeholder-[#3a3a52] outline-none transition-all"
                 oninput="runCalc()">
@@ -251,13 +251,13 @@
       if (!best || net > best.net) best = { name: p.name, net };
       rows += `<tr class="border-b border-[#1a1a28]">
         <td class="px-3 py-2.5 text-[#f1f5f9] text-sm">${p.name}</td>
-        <td class="px-3 py-2.5 text-[#52526a] text-sm">£${fee.toFixed(2)}</td>
-        <td class="px-3 py-2.5 font-semibold text-sm ${profitCls}">£${net.toFixed(2)}</td>
+        <td class="px-3 py-2.5 text-[#52526a] text-sm">$${fee.toFixed(2)}</td>
+        <td class="px-3 py-2.5 font-semibold text-sm ${profitCls}">$${net.toFixed(2)}</td>
         <td class="px-3 py-2.5 font-bold text-sm ${roiCls}">${roi.toFixed(0)}%</td>
       </tr>`;
     });
     el.innerHTML = `
-      <div class="text-xs text-indigo-400 font-semibold mb-2">Best: ${best.name} — £${best.net.toFixed(2)} profit</div>
+      <div class="text-xs text-indigo-400 font-semibold mb-2">Best: ${best.name} — $${best.net.toFixed(2)} profit</div>
       <div class="rounded-xl overflow-hidden border border-[#252532]" style="background:#111118">
         <table class="w-full">
           <thead><tr class="text-[#52526a] text-[10px] uppercase tracking-wider border-b border-[#252532]">

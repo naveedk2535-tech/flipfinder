@@ -81,7 +81,7 @@
               {% if a.status == 'complete' %}
                 {% set profit = a.get_arbitrage().get('true_net_profit', 0) %}
                 <span class="{% if profit > 0 %}text-emerald-400{% elif profit < 0 %}text-red-400{% else %}text-[#52526a]{% endif %} font-semibold">
-                  £{{ "%.0f"|format(profit) }}
+                  ${{ "%.0f"|format(profit) }}
                 </span>
               {% else %}—{% endif %}
             </td>
