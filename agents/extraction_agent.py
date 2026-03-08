@@ -48,7 +48,10 @@ Assess current market demand:
 - Has this item been featured recently by celebrities, athletes, or major influencers?
 - Is it a sold-out limited release? Has it ever restocked or been retroed?
 - Does this specific size/colour command a size premium or discount vs the average? (e.g. "Size 10 is peak demand for this model", "Red colorway outsells black 3:1 on StockX")
-- What is the original retail price (MSRP) in USD?
+- What is the ORIGINAL retail price (MSRP) in USD when this item FIRST launched? NOT the current resale price.
+  Common references: Nike Air Jordan 1 High = $170-180, Yeezy 350 V2 = $230, Nike Dunk Low = $110,
+  Louis Vuitton Neverfull MM = $1,960, Chanel Classic Flap Medium = $10,800, Apple iPhone 15 Pro = $999,
+  Rolex Submariner MSRP = $9,100, PS5 = $500. If you genuinely cannot determine retail, set to 0 — do NOT guess.
 - Which resale platforms are best suited for THIS item type?
 
 ━━━ STEP 5 — COUNTERFEIT RISK ASSESSMENT ━━━
@@ -102,7 +105,11 @@ Field notes:
 - sell_platform_recommendation: 1–2 best platforms for SELLING this item (e.g. "StockX for DS — best prices; eBay for worn pairs with full photo set")
 - demand_level: "high" (sold out/hyped/waitlisted), "medium" (popular but available), "low" (niche/slow-moving)
 - limited_edition: true only if it's a collab, numbered edition, limited drop, or confirmed sold-out release
-- variant_demand_note: size/color premium insight (e.g. "Mocha colorway commands 20% premium over Panda; size 9–11 most liquid")
+- variant_demand_note: REQUIRED if size is known. State specific size premium/discount:
+  Sneakers: sizes 8-12 US are "money sizes" (most liquid, fastest selling). Size 7 and below: -10 to -15%. Size 13+: +5-15% (rare). Size 14+: +20-30% but very slow.
+  Clothing: S/M most liquid for women's, M/L for men's. XXL+: -10-20%.
+  Watches: 40-42mm most liquid. Under 38mm or over 44mm: slower, -5 to -10%.
+  If no size known: "Size unknown — cannot assess size premium."
 - authenticity_indicators: the 3–5 specific checkpoints buyers MUST verify for this exact brand/model
 - search_query: precise and optimised — brand + exact model + colorway + size + condition (e.g. "Nike Air Jordan 1 High OG University Blue size 10 Very Good")"""
 

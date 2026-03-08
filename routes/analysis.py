@@ -59,14 +59,30 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
             # Pass it through so the sourcing agent anchors cheapest_found to the real price.
             input_price = float(extracted.get('listing_price', 0) or 0) if has_link else 0
 
-            # Agents 2 & 3: Pricing + Sourcing in parallel
-            with ThreadPoolExecutor(max_workers=2) as executor:
-                future_pricing = executor.submit(research_prices, search_query, extracted)
-                future_sourcing = executor.submit(find_sourcing_deals, search_query, 0, extracted, input_price)
-                pricing = future_pricing.result()
-                sourcing = future_sourcing.result()
-
+            # Agent 2: Pricing first (sourcing needs avg_sold to compute target buy price)
+            pricing = research_prices(search_query, extracted)
             analysis.price_research = json.dumps(pricing)
+            db.session.commit()
+
+            # Agent 3: Sourcing with real avg_sold data
+            avg_sold = pricing.get('avg_sold', 0) or 0
+            sourcing = find_sourcing_deals(search_query, avg_sold, extracted, input_price)
+
+            # Cross-validation: detect buy/sell spread anomalies
+            cheapest = sourcing.get('cheapest_found', 0) or 0
+            if avg_sold > 0 and cheapest > 0:
+                spread_pct = (avg_sold - cheapest) / avg_sold
+                if cheapest > avg_sold:
+                    sourcing['market_spread_warning'] = (
+                        f"WARNING: Cheapest available (${cheapest:.0f}) exceeds median sold (${avg_sold:.0f}). "
+                        f"The market may be cooling or listings are overpriced. Wait for a price drop."
+                    )
+                elif spread_pct < 0.10:
+                    sourcing['market_spread_warning'] = (
+                        f"Tight market: cheapest listing (${cheapest:.0f}) is within {round(spread_pct*100)}% "
+                        f"of median sold price (${avg_sold:.0f}). Profit margin will be very thin after fees."
+                    )
+
             analysis.sourcing_results = json.dumps(sourcing)
             db.session.commit()
 

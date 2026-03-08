@@ -1,7 +1,14 @@
 import logging
+from datetime import datetime
 from agents.base import run_with_search, parse_first_json
 
 logger = logging.getLogger(__name__)
+
+
+def _current_date_range():
+    """Return dynamic date range string for search queries (previous year + current year)."""
+    now = datetime.utcnow()
+    return f"{now.year - 1} {now.year}"
 
 # Category-specific condition multipliers applied to median sold price
 # Different product categories depreciate at very different rates
@@ -117,6 +124,57 @@ def _get_category_key(product_type: str) -> str:
     return 'default'
 
 
+# Seasonal patterns by category: peak/trough months and their impact
+SEASONAL_PATTERNS = {
+    'sneakers': {
+        'peak': [8, 9, 11, 12],      # Back-to-school + holiday gifting
+        'trough': [1, 2, 6],          # Post-holiday, summer lull
+        'note': 'Sneaker prices peak Aug-Sep (back-to-school) and Nov-Dec (gifting). Currently {status}.',
+    },
+    'clothing': {
+        'peak': [3, 4, 9, 10],       # Season transitions (spring/fall shopping)
+        'trough': [1, 2, 7, 8],      # Post-holiday, mid-season
+        'note': 'Clothing peaks during season transitions (Mar-Apr, Sep-Oct). Winter gear peaks Oct-Dec, summer gear peaks Apr-Jun. Currently {status}.',
+    },
+    'electronics': {
+        'peak': [11, 12],            # Holiday gifting
+        'trough': [9, 10],           # New model launches crater used prices
+        'note': 'Electronics drop 15-25% when new models launch (Sep-Oct). Holiday demand offsets in Nov-Dec. Currently {status}.',
+    },
+    'watches': {
+        'peak': [4, 5, 12],          # Watches & Wonders + holiday
+        'trough': [1, 2, 7, 8],      # Post-holiday, summer
+        'note': 'Watch prices peak around Watches & Wonders (April) and holidays. Q1 and summer are buying opportunities. Currently {status}.',
+    },
+    'bags': {
+        'peak': [9, 10, 11, 12],     # Fall fashion + holidays
+        'trough': [1, 2, 6, 7],      # Post-holiday, summer
+        'note': 'Luxury bag prices peak Sep-Dec (fall fashion + gifting). Best deals in Jan-Feb post-holiday. Currently {status}.',
+    },
+    'collectibles': {
+        'peak': [11, 12],            # Holiday gifting
+        'trough': [1, 2, 3],         # Post-holiday sell-off
+        'note': 'Collectibles peak Nov-Dec (holiday gifts). Post-holiday Jan-Feb sees sell-off and lower prices. Currently {status}.',
+    },
+}
+
+
+def _get_seasonal_context(product_type: str) -> str:
+    """Return seasonal context string for the current month."""
+    month = datetime.utcnow().month
+    cat = _get_category_key(product_type)
+    pattern = SEASONAL_PATTERNS.get(cat)
+    if not pattern:
+        return ""
+    if month in pattern.get('peak', []):
+        status = "IN PEAK SEASON — prices are elevated, good time to sell, bad time to buy"
+    elif month in pattern.get('trough', []):
+        status = "IN TROUGH — prices are depressed, good time to buy, hold for peak to sell"
+    else:
+        status = "in neutral season — normal pricing expected"
+    return pattern.get('note', '').format(status=status)
+
+
 def _get_condition_multiplier(condition: str, product_type: str = '') -> float:
     cat_key = _get_category_key(product_type)
     multipliers = CONDITION_MULTIPLIERS_BY_CATEGORY.get(cat_key, CONDITION_MULTIPLIERS_BY_CATEGORY['default'])
@@ -130,60 +188,61 @@ def _get_condition_multiplier(condition: str, product_type: str = '') -> float:
 def _get_category_platforms(product_type: str) -> str:
     """Return platform-specific search queries for category."""
     cat = _get_category_key(product_type)
+    dr = _current_date_range()
     if cat == 'sneakers':
         return [
-            '"{q} sold StockX last sale 2024 2025"',
-            '"{q} sold GOAT 2024 2025"',
-            '"{q} sold eBay USA sneakers completed listing 2024 2025"',
-            '"{q} Flight Club sold price"',
-            '"{q} Kicks Crew sold price"',
-            '"{q} Depop sold 2024"',
-            '"{q} Poshmark sold 2025"',
-            '"{q} price history trend 2024 2025"',
+            f'"{{q}} sold StockX last sale {dr}"',
+            f'"{{q}} sold GOAT {dr}"',
+            f'"{{q}} sold eBay USA sneakers completed listing {dr}"',
+            f'"{{q}} Flight Club sold price"',
+            f'"{{q}} Kicks Crew sold price"',
+            f'"{{q}} Depop sold {dr}"',
+            f'"{{q}} Poshmark sold {dr}"',
+            f'"{{q}} price history trend {dr}"',
         ]
     elif cat == 'bags':
         return [
-            '"{q} sold Vestiaire Collective 2024 2025"',
-            '"{q} sold Fashionphile price 2024"',
-            '"{q} Rebag value 2024 2025"',
-            '"{q} sold eBay USA completed listing 2024 2025"',
-            '"{q} sold Poshmark 2024"',
-            '"{q} 1stDibs sold price"',
-            '"{q} resale value 2024 2025"',
-            '"{q} pre-owned price estimate 2025"',
+            f'"{{q}} sold Vestiaire Collective {dr}"',
+            f'"{{q}} sold Fashionphile price {dr}"',
+            f'"{{q}} Rebag value {dr}"',
+            f'"{{q}} sold eBay USA completed listing {dr}"',
+            f'"{{q}} sold Poshmark {dr}"',
+            f'"{{q}} 1stDibs sold price"',
+            f'"{{q}} resale value {dr}"',
+            f'"{{q}} pre-owned price estimate {dr}"',
         ]
     elif cat == 'watches':
         return [
-            '"{q} sold Chrono24 price 2024 2025"',
-            '"{q} WatchFinder sold price 2024"',
-            '"{q} sold eBay USA completed listing 2024 2025"',
-            '"{q} Watchbox trade-in value 2025"',
-            '"{q} sold price 2024 2025 used market"',
-            '"{q} auction result 2024"',
-            '"{q} grey market price 2025"',
-            '"{q} resale value box papers vs no box"',
+            f'"{{q}} sold Chrono24 price {dr}"',
+            f'"{{q}} WatchFinder sold price {dr}"',
+            f'"{{q}} sold eBay USA completed listing {dr}"',
+            f'"{{q}} Watchbox trade-in value {dr}"',
+            f'"{{q}} sold price {dr} used market"',
+            f'"{{q}} auction result {dr}"',
+            f'"{{q}} grey market price {dr}"',
+            f'"{{q}} resale value box papers vs no box"',
         ]
     elif cat == 'electronics':
         return [
-            '"{q} sold eBay USA completed listing 2024 2025"',
-            '"{q} Swappa sold price 2024 2025"',
-            '"{q} Back Market price 2025"',
-            '"{q} Decluttr value 2025"',
-            '"{q} used price USA 2024 2025"',
-            '"{q} Mercari sold 2024"',
-            '"{q} Facebook Marketplace sold price"',
-            '"{q} price history depreciation chart 2024 2025"',
+            f'"{{q}} sold eBay USA completed listing {dr}"',
+            f'"{{q}} Swappa sold price {dr}"',
+            f'"{{q}} Back Market price {dr}"',
+            f'"{{q}} Decluttr value {dr}"',
+            f'"{{q}} used price USA {dr}"',
+            f'"{{q}} Mercari sold {dr}"',
+            f'"{{q}} Facebook Marketplace sold price"',
+            f'"{{q}} price history depreciation chart {dr}"',
         ]
     else:
         return [
-            '"{q} sold eBay USA completed listing 2024 2025"',
-            '"{q} Poshmark sold 2024 2025"',
-            '"{q} Depop sold"',
-            '"{q} Mercari sold USA"',
-            '"{q} StockX sold" OR "{q} GOAT sold"',
-            '"{q} Vestiaire Collective sold"',
-            '"{q} resale price 2024 2025"',
-            '"{q} price history USA 2025"',
+            f'"{{q}} sold eBay USA completed listing {dr}"',
+            f'"{{q}} Poshmark sold {dr}"',
+            f'"{{q}} Depop sold"',
+            f'"{{q}} Mercari sold USA"',
+            f'"{{q}} StockX sold" OR "{{q}} GOAT sold"',
+            f'"{{q}} Vestiaire Collective sold"',
+            f'"{{q}} resale price {dr}"',
+            f'"{{q}} price history USA {dr}"',
         ]
 
 
@@ -225,6 +284,8 @@ def research_prices(search_query, product_info):
             "Rebag, 1stDibs. Typical range $300–$10,000+. Always use COMPLETED/SOLD prices only."
         ) if is_luxury else ""
 
+        seasonal_context = _get_seasonal_context(product_type)
+
         size_note      = f" | Size: {size}"      if size      else ""
         condition_note = f" | Condition: {condition}" if condition else ""
         demand_note    = f" | Demand: {demand_level}"
@@ -260,14 +321,14 @@ Condition-matched data is far more accurate than applying a multiplier to new/DS
 RECENCY: Last 90 days is worth 3× more than older data. Flag any data older than 90 days clearly.
 
 Run these condition-specific searches first:
-1. "{search_query} sold eBay USA completed listing 2024 2025"
-2. "{search_query} sold price 2024 2025"
+1. "{search_query} sold eBay USA completed listing {_current_date_range()}"
+2. "{search_query} sold price {_current_date_range()}"
 3. "{search_query} StockX last sale" (if applicable for this item type)
 4. "{search_query} GOAT sold" (if applicable)
-5. "{search_query} Poshmark sold 2024 2025"
-6. "{search_query} Mercari sold USA 2024"
+5. "{search_query} Poshmark sold {_current_date_range()}"
+6. "{search_query} Mercari sold USA {_current_date_range()}"
 7. "{search_query} Vestiaire Fashionphile Rebag sold" (if luxury/bag/watch)
-8. "{search_query} resale price history 2024 2025"
+8. "{search_query} resale price history {_current_date_range()}"
 
 Note: The search_query already includes the condition grade — your results should surface condition-matched listings.
 
@@ -299,6 +360,18 @@ DECISION RULE:
 → If you found fewer than 3 condition-matched points: apply ×{cond_mult:.2f} to the base-condition median price to get the condition-adjusted estimate. Set condition_multiplier = {cond_mult:.2f} in output.
 
 This prevents double-discounting (applying a multiplier to prices that are already condition-adjusted).
+
+━━━ SEASONAL & SUPPLY CONTEXT ━━━
+{f'SEASONAL: {seasonal_context}' if seasonal_context else 'No strong seasonal pattern for this category.'}
+If the item is seasonal, adjust sell_velocity_days and recommended_sell_price accordingly.
+Off-season items take 2-3x longer to sell and typically sell for 10-20% below peak.
+
+SUPPLY DEPTH: Also estimate how many ACTIVE (unsold) listings you saw for this item across platforms:
+- Under 5: SCARCE — seller has pricing power, can list near price_range_high
+- 5-20: NORMAL — competitive, recommended_sell_price is appropriate
+- 20-50: OVERSUPPLIED — need to undercut, lean toward price_range_low
+- 50+: SATURATED — heavy competition, sell at price_range_low or hold for supply to clear
+Report this as supply_depth in your output.
 
 ━━━ STEP 5 — PRICE CALCULATION ━━━
 From your evidence:
@@ -347,12 +420,16 @@ CRITICAL: Output ONLY the raw JSON object. No markdown fences. Start directly wi
   "price_trend": "stable",
   "price_trend_detail": "Explanation of why prices are moving in this direction and what to expect",
   "data_quality_score": 5,
-  "seasonal_note": ""
+  "seasonal_note": "",
+  "supply_depth": "normal",
+  "active_listings_approx": 15
 }}
 
 Field notes:
 - data_quality_score: 1–10 (10 = multiple confirmed recent sales across 3+ platforms; 1 = pure guess)
-- seasonal_note: any seasonal factor (e.g. "Winter coats peak November–January, currently off-season — expect 15% below avg", "Blank — no seasonal impact for this item type")
+- seasonal_note: any seasonal factor (e.g. "Winter coats peak November–January, currently off-season — expect 15% below avg")
+- supply_depth: "scarce" / "normal" / "oversupplied" / "saturated" — based on active listing count
+- active_listings_approx: your estimate of total active listings across all platforms
 - Fill ALL values with real calculated numbers. The zeros are placeholders only."""
 
         raw = run_with_search(prompt=prompt, use_search=True, max_tokens=8192)
@@ -373,10 +450,17 @@ Field notes:
             if not result.get('condition_multiplier') and result.get('condition_multiplier') != 1.0:
                 result['condition_multiplier'] = cond_mult
 
+            # Supply depth adjustment: if oversupplied/saturated, reduce recommended_sell_price
+            supply = result.get('supply_depth', 'normal')
+            if supply in ('oversupplied', 'saturated') and result.get('recommended_sell_price'):
+                discount = 0.93 if supply == 'oversupplied' else 0.88
+                result['recommended_sell_price'] = round(result['recommended_sell_price'] * discount, 2)
+                result['sell_velocity_days'] = max(result.get('sell_velocity_days', 14), 21)
+
             # Retry if still all zeros
             if not result.get('avg_sold') and not result.get('recommended_sell_price'):
                 logger.warning("Pricing returned all zeros — retrying knowledge-only")
-                fallback_prompt = f"""You are a resale pricing expert. What is the typical US resale price range for "{search_query}" in 2024–2025?
+                fallback_prompt = f"""You are a resale pricing expert. What is the typical US resale price range for "{search_query}" in {_current_date_range()}?
 
 Brand: {brand} | Type: {product_type} | Condition: {condition}
 
@@ -437,5 +521,7 @@ Replace all zeros with REAL estimates based on your knowledge. NEVER output 0 fo
         "price_trend": "stable",
         "price_trend_detail": "",
         "data_quality_score": 1,
-        "seasonal_note": ""
+        "seasonal_note": "",
+        "supply_depth": "normal",
+        "active_listings_approx": 0
     }

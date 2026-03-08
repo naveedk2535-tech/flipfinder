@@ -1,7 +1,14 @@
 import logging
+from datetime import datetime
 from agents.base import run_with_search, parse_first_json
 
 logger = logging.getLogger(__name__)
+
+
+def _current_date_range():
+    """Return dynamic date range string for search queries (previous year + current year)."""
+    now = datetime.utcnow()
+    return f"{now.year - 1} {now.year}"
 
 _REFUSAL_PHRASES = [
     "i am sorry", "i cannot fulfill", "i can't fulfill",
@@ -39,7 +46,7 @@ def _get_category_sourcing_config(product_type: str, brand: str, avg_sold_price:
         condition_to_buy = "Excellent or better — hardware and lining condition is critical for resale"
         category_searches = [
             f'"{product_type} {brand}" Vestiaire Collective for sale',
-            f'"{product_type} {brand}" Poshmark for sale 2024 2025',
+            f'"{product_type} {brand}" Poshmark for sale {_current_date_range()}',
             f'"{product_type} {brand}" eBay USA buy now listing',
             f'"{product_type} {brand}" Depop for sale',
             f'"{product_type} {brand}" Mercari USA',
@@ -178,7 +185,7 @@ Find items with a similar look/aesthetic — useful for buyers who want the vibe
 9.  "similar to {search_query} USA resale"
 10. "{product_type} {style} alternative GOAT StockX Farfetch"
 11. "{product_type} {colors} {brand} similar style"
-12. "{product_type} {style} trending 2024 2025 popular"
+12. "{product_type} {style} trending {_current_date_range()} popular"
 
 ━━━ STEP 3 — BUDGET ALTERNATIVES ━━━
 Find mass-market items that capture a similar aesthetic at lower cost:

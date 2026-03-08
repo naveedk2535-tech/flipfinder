@@ -4,16 +4,25 @@ from agents.base import run_with_search, parse_first_json
 
 logger = logging.getLogger(__name__)
 
-# eBay category-specific final value fees (as of 2025)
-# eBay's sneaker/athletic footwear category has a special reduced fee
+# eBay category-specific fees: Final Value Fee + 2.35% Managed Payments processing
 EBAY_FEES_BY_CATEGORY = {
-    'sneakers':     0.080,   # 8% — eBay sneaker authenticated deals category
-    'electronics':  0.1325,  # 13.25%
-    'bags':         0.1325,  # 13.25%
-    'watches':      0.1325,  # 13.25%
-    'clothing':     0.1325,  # 13.25%
-    'collectibles': 0.1325,  # 13.25%
-    'default':      0.1350,  # 13.5% general category
+    'sneakers':     0.080 + 0.0235,   # 8% FVF + 2.35% payment = 10.35%
+    'electronics':  0.1325 + 0.0235,  # 13.25% + 2.35% = 15.60%
+    'bags':         0.1325 + 0.0235,
+    'watches':      0.1325 + 0.0235,
+    'clothing':     0.1325 + 0.0235,
+    'collectibles': 0.1325 + 0.0235,
+    'default':      0.1350 + 0.0235,  # 13.5% + 2.35% = 15.85%
+}
+
+# All platform fees (total seller cost including payment processing)
+PLATFORM_FEES = {
+    'eBay':     None,      # category-specific, resolved at runtime
+    'Depop':    0.10,      # 10% seller fee (includes payment processing)
+    'Poshmark': 0.20,      # 20% commission
+    'StockX':   0.125,     # 9.5% seller fee + 3% payment processing
+    'Mercari':  0.10,      # 10% seller fee
+    'Grailed':  0.119,     # 9% commission + 2.9% payment processing
 }
 
 
@@ -34,14 +43,210 @@ def _get_ebay_fee(product_info: dict) -> float:
     return EBAY_FEES_BY_CATEGORY['default']
 
 
+def _get_category_key(product_info: dict) -> str:
+    """Return category key for platform eligibility checks."""
+    pt = (product_info.get('product_type', '') or '').lower()
+    if any(k in pt for k in ['sneaker', 'shoe', 'trainer', 'boot', 'sandal', 'jordan', 'yeezy']):
+        return 'sneakers'
+    if any(k in pt for k in ['bag', 'handbag', 'purse', 'wallet', 'backpack', 'tote']):
+        return 'bags'
+    if 'watch' in pt:
+        return 'watches'
+    if any(k in pt for k in ['phone', 'laptop', 'tablet', 'console', 'electronic', 'camera', 'headphone']):
+        return 'electronics'
+    if any(k in pt for k in ['clothing', 'jacket', 'shirt', 'hoodie', 'dress', 'jeans', 'coat', 'top', 'trousers', 'sweatshirt']):
+        return 'clothing'
+    if any(k in pt for k in ['card', 'toy', 'figure', 'collectible', 'lego', 'funko']):
+        return 'collectibles'
+    return 'default'
+
+
+def _is_platform_eligible(platform: str, product_info: dict) -> bool:
+    """Check if a platform is eligible for this item type."""
+    condition = (product_info.get('condition_grade', '') or '').lower()
+    cat = _get_category_key(product_info)
+
+    if platform == 'StockX':
+        # StockX requires deadstock/new items only
+        return condition in ('deadstock', 'new with tags')
+    if platform == 'Grailed':
+        # Grailed is primarily clothing, sneakers, streetwear
+        return cat in ('sneakers', 'clothing', 'default')
+    return True
+
+
+def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info):
+    """Recalculate all arithmetic fields deterministically in Python.
+    AI provides qualitative assessments; Python guarantees correct math."""
+
+    buy = result.get('buy_price', 0) or 0
+    sell = result.get('sell_price', 0) or 0
+
+    # Reconstruct from source data if AI returned bad values
+    if sell <= 0:
+        sell = pricing_data.get('recommended_sell_price', 0) or (pricing_data.get('avg_sold', 0) * 0.82)
+    if buy <= 0:
+        buy = sourcing_data.get('cheapest_found', 0) or sourcing_data.get('avg_source_price', 0)
+        if buy <= 0:
+            buy = (pricing_data.get('avg_sold', 0) or 0) * 0.55
+
+    result['buy_price'] = round(buy, 2)
+    result['sell_price'] = round(sell, 2)
+    result['gross_profit'] = round(sell - buy, 2)
+
+    # Build platform fee map
+    ebay_fee_pct = _get_ebay_fee(product_info)
+    platforms = dict(PLATFORM_FEES)
+    platforms['eBay'] = ebay_fee_pct
+
+    # Get shipping estimate from AI (or use default)
+    shipping = result.get('shipping_cost_est', 10.0) or 10.0
+
+    best_net = float('-inf')
+    best_plat = 'eBay'
+    breakdown = []
+
+    for plat, fee_pct in platforms.items():
+        if not _is_platform_eligible(plat, product_info):
+            continue
+        fee_amt = round(sell * fee_pct, 2)
+        net = round(sell - buy - fee_amt - shipping, 2)
+        roi = round((net / buy) * 100, 2) if buy > 0 else 0
+        breakdown.append({
+            'platform': plat,
+            'fee_pct': round(fee_pct * 100, 1),
+            'fee_amount': fee_amt,
+            'net_profit': net,
+            'net_roi': roi
+        })
+        if net > best_net:
+            best_net = net
+            best_plat = plat
+
+    result['platform_breakdown'] = breakdown
+    result['best_platform'] = best_plat
+    best_fee_pct = platforms.get(best_plat, 0.135)
+    result['platform_fee'] = round(sell * best_fee_pct, 2)
+    result['net_profit'] = round(sell - buy - result['platform_fee'], 2)
+    result['true_net_profit'] = round(result['net_profit'] - shipping, 2)
+
+    # Storage cost
+    velocity = pricing_data.get('sell_velocity_days', 14) or 14
+    storage = min(velocity * 0.50, 15.0)
+    result['storage_cost_est'] = round(storage, 2)
+    result['true_net_profit_after_storage'] = round(result['true_net_profit'] - storage, 2)
+
+    # Break-even price
+    if best_fee_pct < 1:
+        result['break_even_price'] = round((buy + shipping) / (1 - best_fee_pct), 2)
+    else:
+        result['break_even_price'] = 0
+
+    # ROI
+    result['roi_percent'] = round((result['true_net_profit'] / buy) * 100, 2) if buy > 0 else 0
+    result['capital_at_risk'] = round(buy, 2)
+
+    # Risk-adjusted ROI
+    confidence = pricing_data.get('confidence', 'medium')
+    conf_factor = {'high': 0.90, 'medium': 0.75, 'low': 0.55}.get(confidence, 0.75)
+    result['risk_adjusted_roi'] = round(result['roi_percent'] * conf_factor, 2)
+
+    # Minimum viable ROI by price tier
+    if buy < 50:
+        result['minimum_viable_roi'] = 60
+    elif buy < 200:
+        result['minimum_viable_roi'] = 35
+    elif buy < 500:
+        result['minimum_viable_roi'] = 20
+    else:
+        result['minimum_viable_roi'] = 15
+
+    # Verdict (deterministic)
+    roi = result['roi_percent']
+    tnp = result['true_net_profit']
+    if roi > 80 and tnp > 0:
+        result['verdict'] = 'Strong Flip'
+    elif roi >= 35 and tnp > 0:
+        result['verdict'] = 'Decent Flip'
+    elif roi >= 10 and tnp > 0:
+        result['verdict'] = 'Marginal'
+    else:
+        result['verdict'] = 'Avoid'
+
+    # Risk rating
+    avg_sold = pricing_data.get('avg_sold', 1) or 1
+    min_sold = pricing_data.get('min_sold', 0) or 0
+    max_sold = pricing_data.get('max_sold', 0) or 0
+    variance = ((max_sold - min_sold) / avg_sold) if avg_sold > 0 else 0
+    auth_risk = sourcing_data.get('authenticity_risk', 'medium')
+    if variance > 0.60 or tnp <= 0 or (auth_risk == 'high' and variance > 0.30):
+        result['risk_rating'] = 'high'
+    elif variance > 0.25 or auth_risk == 'high':
+        result['risk_rating'] = 'medium'
+    else:
+        result['risk_rating'] = 'low'
+
+    # Opportunity score (deterministic)
+    score = 50
+    if roi > 80:
+        score += 20
+    elif roi >= 40:
+        score += 10
+    elif roi < 20:
+        score -= 10
+    if roi < 0:
+        score -= 20
+    if confidence == 'high':
+        score += 10
+    elif confidence == 'low':
+        score -= 10
+    if velocity < 10:
+        score += 10
+    elif velocity > 30:
+        score -= 10
+    if tnp > 100:
+        score += 5
+    if result['risk_rating'] == 'high':
+        score -= 5
+    result['opportunity_score'] = max(5, min(95, score))
+
+    # Time and hourly rate
+    time_hrs = result.get('estimated_time_hrs', 2.0) or 2.0
+    result['estimated_time_hrs'] = time_hrs
+    result['net_hourly_rate'] = round(result['true_net_profit'] / time_hrs, 2) if time_hrs > 0 else 0
+
+    # Ensure liquidity score
+    if velocity <= 3:
+        result['liquidity_score'] = 10
+    elif velocity <= 7:
+        result['liquidity_score'] = 8
+    elif velocity <= 14:
+        result['liquidity_score'] = 6
+    elif velocity <= 30:
+        result['liquidity_score'] = 3
+    else:
+        result['liquidity_score'] = 1
+
+    return result
+
+
 def calculate_arbitrage(pricing_data, sourcing_data, product_info=None):
-    """Calculate arbitrage profit with expert P&L, risk-adjusted ROI, and category-accurate fees."""
+    """Calculate arbitrage profit with Python-validated math and AI qualitative analysis."""
     product_info = product_info or {}
     ebay_fee_pct = _get_ebay_fee(product_info)
     ebay_fee_display = round(ebay_fee_pct * 100, 1)
+    cat_key = _get_category_key(product_info)
+
+    # Build platform fees display for prompt
+    platform_fees_text = f"""- eBay:     {ebay_fee_display}% (FVF + payment processing, category-specific)
+- Depop:    10% (seller fee, includes payment processing)
+- Poshmark: 20% (commission)
+- StockX:   12.5% (9.5% seller + 3% payment processing)
+- Mercari:  10% (seller fee)
+- Grailed:  11.9% (9% commission + 2.9% payment processing)"""
 
     try:
-        prompt = f"""You are a professional resale arbitrage analyst. Calculate the complete opportunity from the data below with precise arithmetic. Show your working before outputting JSON.
+        prompt = f"""You are a professional resale arbitrage analyst. Analyse this flip opportunity and provide strategic advice.
 
 PRICING DATA (what it sells for):
 {json.dumps(pricing_data, indent=2)}
@@ -49,181 +254,59 @@ PRICING DATA (what it sells for):
 SOURCING DATA (what you can buy it for):
 {json.dumps(sourcing_data, indent=2)}
 
-━━━ STEP 1 — SET BASE PRICES ━━━
-- buy_price = cheapest_found from sourcing_data
-  → If cheapest_found is 0 or missing, use avg_source_price
-  → If both are 0, use avg_sold from pricing_data × 0.55 (conservative estimate)
-  → If url_is_source=true, the buy_price is the CONFIRMED listing price — use it directly
-- sell_price = recommended_sell_price from pricing_data
-  → This is already a liquidity-adjusted, conservative sell price (≈82% of median sold). Use it as-is — it represents what a real seller will realistically achieve, not the ceiling.
-  → SANITY CHECK: must be ≥ price_range_low and ≤ max_sold. If above max_sold, cap at max_sold. If 0 or missing, use avg_sold × 0.82.
-- gross_profit = sell_price − buy_price
+PRODUCT INFO:
+Category: {cat_key}
+Condition: {product_info.get('condition_grade', 'Unknown')}
 
-Note: If gross_profit is negative, report it accurately — do NOT adjust prices to hide a bad deal.
+PLATFORM FEES (for reference — Python will recalculate all math, you just need to understand the landscape):
+{platform_fees_text}
 
-━━━ STEP 2 — PLATFORM FEE BREAKDOWN (ACCURATE RATES) ━━━
-Calculate for each platform using the SELL PRICE:
+NOTE: All numeric calculations (ROI, fees, net profit, verdict, opportunity score) will be recalculated in Python. Your job is to provide:
 
-- eBay:     fee = sell_price × {ebay_fee_pct:.4f}  ({ebay_fee_display}% — category-specific rate)
-- Depop:    fee = sell_price × 0.10   (10% seller fee)
-- Poshmark: fee = sell_price × 0.20   (20% commission)
-- StockX:   fee = sell_price × 0.125  (9.5% seller fee + 3% payment processing = 12.5% total)
+1. **shipping_cost_est**: Estimate US domestic shipping for this specific item type:
+   - Sneakers/shoes: $12-15 | Bags: $12-18 | Clothing: $5-8
+   - Electronics: $12-20 | Watches: $8-12 | Bulky: $15-25 | Default: $10
 
-net_profit for each = gross_profit − platform_fee
+2. **estimated_time_hrs**: Total time investment for this flip:
+   - Simple clothing: 1-2 hrs | Sneakers/bags: 2-3 hrs
+   - Electronics: 2-4 hrs | Luxury watches: 3-5 hrs
 
-NOTE on StockX: Only include StockX as best_platform if item is in Deadstock condition — StockX requires unworn/unused items. For worn items, exclude StockX from the "best platform" recommendation.
+3. **recommendation**: Specific actionable recommendation for THIS item — whether it's worth flipping, key risks, what to watch for. Mention if the item meets/misses minimum viable ROI for its price tier.
 
-━━━ STEP 3 — SHIPPING & TRUE NET PROFIT ━━━
-Estimate US domestic shipping cost based on item type (use product_type from sourcing data):
-- Sneakers/shoes:        $12–15 (signature confirmation recommended for items >$100)
-- Bags/handbags:         $12–18 (insured shipping strongly recommended)
-- Clothing/accessories:  $5–8  (poly mailer, first class)
-- Electronics:           $12–20 (double-box required, fragile)
-- Watches/jewellery:     $8–12 (insured, discreet packaging)
-- Bulky items:           $15–25
-- Default:               $10
+4. **listing_tips**: 5 specific, actionable tips for THIS exact item:
+   - Platform choice (which platform first and why for this item)
+   - Title strategy (exact keywords buyers search for)
+   - Photography (specific angles and details for this item type)
+   - Pricing strategy (BIN vs auction, offer enabled)
+   - Trust & authenticity (how to build buyer confidence)
 
-best_platform = platform with the highest net_profit (after fee, considering condition eligibility)
-true_net_profit = best_platform net_profit − shipping_cost_est
-break_even_price = (buy_price + shipping_cost_est) / (1 − best_platform_fee_pct), round up
+5. **risk_commentary**: Qualitative risk factors the numbers don't capture (authenticity concerns, market saturation, seasonal timing, condition ambiguity).
 
-storage_cost_est = sell_velocity_days × 0.50 per day, capped at $15
-(Accounts for space, time cost of holding the item until it sells)
-
-true_net_profit_after_storage = true_net_profit − storage_cost_est
-
-━━━ STEP 4 — ROI & RISK ANALYSIS ━━━
-roi_percent = (true_net_profit / buy_price) × 100
-  → If buy_price = 0, set roi_percent = 0
-
-risk_adjusted_roi = roi_percent × confidence_factor
-  → confidence "high" = factor 0.90 (high confidence in prices, small discount)
-  → confidence "medium" = factor 0.75
-  → confidence "low" = factor 0.55 (significant uncertainty)
-  → Use the confidence field from pricing_data
-
-risk_rating:
-- "low"    if price variance ((max_sold − min_sold) / avg_sold) < 25%
-- "medium" if variance 25–60% OR authenticity_risk is "high" in sourcing
-- "high"   if variance > 60%, OR true_net_profit negative, OR authenticity_risk "high" AND variance > 30%
-
-capital_at_risk = buy_price (the maximum you can lose if the item doesn't sell)
-minimum_viable_roi: the minimum ROI % that makes this flip worth your time
-- If buy_price < $50: need 60%+ ROI (small deals need big % returns to cover effort)
-- If buy_price $50–200: need 35%+ ROI
-- If buy_price $200–500: need 20%+ ROI (higher $ profit justifies lower %)
-- If buy_price > $500: need 15%+ ROI ($100+ absolute profit on quality items is worthwhile)
-
-opportunity_score (0–100): combines ROI, confidence, demand, velocity:
-- Start at 50
-- +20 if roi_percent > 80%
-- +10 if roi_percent 40–80%
-- -10 if roi_percent < 20%
-- -20 if roi_percent < 0%
-- +10 if confidence = "high"
-- -10 if confidence = "low"
-- +10 if sell_velocity_days < 10 (fast moving)
-- -10 if sell_velocity_days > 30 (slow, capital tied up)
-- +5 if true_net_profit > $100 (meaningful absolute profit)
-- -5 if risk_rating = "high"
-- Cap at 95, floor at 5
-
-verdict (be honest, never optimistic when numbers are bad):
-- "Strong Flip"  if roi_percent > 80% AND true_net_profit > 0
-- "Decent Flip"  if roi_percent 35–80% AND true_net_profit > 0
-- "Marginal"     if roi_percent 10–35% AND true_net_profit > 0
-- "Avoid"        if roi_percent < 10% OR true_net_profit ≤ 0
-
-IMPORTANT: For high-ticket items (buy_price > $500), a "Decent Flip" at 25%+ ROI is acceptable — absolute dollar profit matters. Mention this in the recommendation.
-
-━━━ STEP 5 — LIQUIDITY & TIME VALUE ━━━
-liquidity_score (1–10): How quickly and reliably will this sell?
-- Use sell_velocity_days: 1–3 days → 9–10; 4–7 → 7–8; 8–14 → 5–6; 15–30 → 3–4; 30+ → 1–2
-
-estimated_time_hrs: total realistic time investment for this flip:
-- Simple clothing/accessories: 1–2 hrs (photograph + list + pack + ship)
-- Sneakers/bags: 2–3 hrs (detail photography, authentication photos, listing, negotiation)
-- Electronics: 2–4 hrs (test, photograph ports/screen, listing, packaging)
-- Luxury watches: 3–5 hrs (detailed photography, authentication, higher-maintenance buyers)
-
-net_hourly_rate = true_net_profit / estimated_time_hrs
-
-━━━ STEP 6 — LISTING STRATEGY & TIPS ━━━
-Generate 5 specific, actionable tips for THIS exact item. Be concrete, not generic:
-1. PLATFORM CHOICE: Which platform first and why (mention specific reasons for this item type)
-2. TITLE STRATEGY: Exact keywords to include in the listing title — what buyers search for
-3. PHOTOGRAPHY: Specific angles and detail shots buyers need to see for this item category
-4. PRICING STRATEGY: BIN price vs auction, offer enabled yes/no, pricing vs comparable listings
-5. TRUST & AUTHENTICITY: How to present the item to maximise buyer confidence (especially if auth_risk is high)
-
-BONUS tips if relevant:
-- Timing: day of week / season that maximises sell price for this item
-- Condition disclosure: how to describe flaws honestly while still selling effectively
-
-━━━ OUTPUT ━━━
-Return ONLY valid JSON (no markdown, no extra text). Replace ALL example numbers with real calculations:
+Return ONLY valid JSON (no markdown):
 {{
-  "buy_price": 0.00,
-  "sell_price": 0.00,
-  "gross_profit": 0.00,
-  "best_platform": "eBay",
-  "platform_fee": 0.00,
-  "net_profit": 0.00,
-  "shipping_cost_est": 10.00,
-  "storage_cost_est": 0.00,
-  "true_net_profit": 0.00,
-  "true_net_profit_after_storage": 0.00,
-  "break_even_price": 0.00,
-  "roi_percent": 0.00,
-  "risk_adjusted_roi": 0.00,
-  "minimum_viable_roi": 0.00,
-  "capital_at_risk": 0.00,
-  "risk_rating": "medium",
-  "verdict": "Marginal",
-  "recommendation": "Specific actionable recommendation for THIS item — what to do, where, what to watch for, whether it's worth it given the numbers",
-  "opportunity_score": 40,
-  "liquidity_score": 5,
+  "buy_price": 0,
+  "sell_price": 0,
+  "shipping_cost_est": 10.0,
   "estimated_time_hrs": 2.0,
-  "net_hourly_rate": 0.00,
+  "recommendation": "Specific recommendation text",
   "listing_tips": [
-    "Platform choice: [specific recommendation with reason]",
-    "Title: include [specific keywords for this item]",
-    "Photos: photograph [specific details for this item type]",
-    "Pricing: [specific strategy with numbers]",
-    "Trust: [specific auth/trust-building advice]"
+    "Platform: [specific reason]",
+    "Title: [specific keywords]",
+    "Photos: [specific details]",
+    "Pricing: [specific strategy]",
+    "Trust: [specific advice]"
   ],
-  "platform_breakdown": [
-    {{"platform": "eBay",     "fee_pct": {ebay_fee_display}, "fee_amount": 0.00, "net_profit": 0.00, "net_roi": 0.00}},
-    {{"platform": "Depop",    "fee_pct": 10.0, "fee_amount": 0.00, "net_profit": 0.00, "net_roi": 0.00}},
-    {{"platform": "Poshmark", "fee_pct": 20.0, "fee_amount": 0.00, "net_profit": 0.00, "net_roi": 0.00}},
-    {{"platform": "StockX",   "fee_pct": 12.5, "fee_amount": 0.00, "net_profit": 0.00, "net_roi": 0.00}}
-  ]
+  "risk_commentary": "Qualitative risk assessment"
 }}
 
-IMPORTANT: If buy_price > sell_price, net_profit IS negative — report it accurately. Do NOT set everything to 0 to avoid showing a bad deal."""
+CRITICAL: Set buy_price to cheapest_found from sourcing (or avg_source_price). Set sell_price to recommended_sell_price from pricing. These anchor the Python calculations."""
 
-        raw = run_with_search(prompt=prompt, use_search=False, max_tokens=4000, fast=True)
+        raw = run_with_search(prompt=prompt, use_search=False, max_tokens=2500, fast=True)
         logger.info(f"Arbitrage raw response (first 300): {raw[:300]}")
         result = parse_first_json(raw)
         if result:
-            # Ensure new fields exist for backwards compatibility
-            result.setdefault('liquidity_score', 5)
-            result.setdefault('estimated_time_hrs', 2.0)
-            result.setdefault('storage_cost_est', 0.0)
-            result.setdefault('true_net_profit_after_storage', result.get('true_net_profit', 0))
-            result.setdefault('risk_adjusted_roi', 0.0)
-            result.setdefault('minimum_viable_roi', 0.0)
-            result.setdefault('capital_at_risk', result.get('buy_price', 0))
-            if result.get('true_net_profit') and result.get('estimated_time_hrs'):
-                result.setdefault('net_hourly_rate', round(result['true_net_profit'] / result['estimated_time_hrs'], 2))
-            else:
-                result.setdefault('net_hourly_rate', 0.0)
-            # Ensure every platform_breakdown entry has all fields
-            for p in result.get('platform_breakdown', []):
-                p.setdefault('net_roi', 0)
-                p.setdefault('net_profit', 0)
-                p.setdefault('fee_pct', 0)
-                p.setdefault('fee_amount', 0)
+            # Python recalculates all math deterministically
+            result = _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
             return result
         else:
             logger.error(f"Arbitrage: no JSON found. Raw: {raw[:500]}")
@@ -231,35 +314,36 @@ IMPORTANT: If buy_price > sell_price, net_profit IS negative — report it accur
     except Exception as e:
         logger.error(f"Arbitrage agent error: {e}")
 
+    # Fallback: build entirely from pricing/sourcing data in Python
     ebay_fee_display_safe = round(ebay_fee_pct * 100, 1)
-    return {
-        "buy_price": 0.00,
-        "sell_price": 0.00,
-        "gross_profit": 0.00,
+    fallback = {
+        "buy_price": 0,
+        "sell_price": 0,
+        "gross_profit": 0,
         "best_platform": "Unknown",
-        "platform_fee": 0.00,
-        "net_profit": 0.00,
-        "shipping_cost_est": 10.00,
-        "storage_cost_est": 0.00,
-        "true_net_profit": 0.00,
-        "true_net_profit_after_storage": 0.00,
-        "break_even_price": 0.00,
-        "roi_percent": 0.00,
-        "risk_adjusted_roi": 0.00,
-        "minimum_viable_roi": 0.00,
-        "capital_at_risk": 0.00,
+        "platform_fee": 0,
+        "net_profit": 0,
+        "shipping_cost_est": 10.0,
+        "storage_cost_est": 0,
+        "true_net_profit": 0,
+        "true_net_profit_after_storage": 0,
+        "break_even_price": 0,
+        "roi_percent": 0,
+        "risk_adjusted_roi": 0,
+        "minimum_viable_roi": 0,
+        "capital_at_risk": 0,
         "risk_rating": "high",
         "verdict": "Avoid",
         "recommendation": "Insufficient data to calculate arbitrage.",
+        "risk_commentary": "",
         "opportunity_score": 0,
         "liquidity_score": 0,
         "estimated_time_hrs": 0,
-        "net_hourly_rate": 0.00,
+        "net_hourly_rate": 0,
         "listing_tips": [],
-        "platform_breakdown": [
-            {"platform": "eBay",     "fee_pct": ebay_fee_display_safe, "fee_amount": 0, "net_profit": 0, "net_roi": 0},
-            {"platform": "Depop",    "fee_pct": 10.0,                  "fee_amount": 0, "net_profit": 0, "net_roi": 0},
-            {"platform": "Poshmark", "fee_pct": 20.0,                  "fee_amount": 0, "net_profit": 0, "net_roi": 0},
-            {"platform": "StockX",   "fee_pct": 12.5,                  "fee_amount": 0, "net_profit": 0, "net_roi": 0},
-        ]
+        "platform_breakdown": [],
     }
+    # Try to compute from available data
+    if pricing_data.get('recommended_sell_price') or sourcing_data.get('cheapest_found'):
+        fallback = _validate_and_recalculate(fallback, pricing_data, sourcing_data, product_info)
+    return fallback
