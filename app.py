@@ -113,12 +113,15 @@ def create_app():
     from routes.analysis import analysis_bp
     from routes.admin import admin_bp
     from routes.billing import billing_bp
+    from routes.api import api_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(analysis_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(billing_bp)
+    app.register_blueprint(api_bp)
+    csrf.exempt(api_bp)
 
     @app.before_request
     def track_visitor():
