@@ -17,12 +17,24 @@ EBAY_FEES_BY_CATEGORY = {
 
 # All platform fees (total seller cost including payment processing)
 PLATFORM_FEES = {
-    'eBay':     None,      # category-specific, resolved at runtime
-    'Depop':    0.10,      # 10% seller fee (includes payment processing)
-    'Poshmark': 0.20,      # 20% commission
-    'StockX':   0.125,     # 9.5% seller fee + 3% payment processing
-    'Mercari':  0.10,      # 10% seller fee
-    'Grailed':  0.119,     # 9% commission + 2.9% payment processing
+    'eBay':        None,      # category-specific, resolved at runtime
+    'Depop':       0.10,      # 10% seller fee (includes payment processing)
+    'Poshmark':    0.20,      # 20% commission
+    'StockX':      0.125,     # 9.5% seller fee + 3% payment processing
+    'Mercari':     0.10,      # 10% seller fee
+    'Grailed':     0.119,     # 9% commission + 2.9% payment processing
+    'Swappa':      0.03,      # 3% seller fee (electronics only)
+    'Back Market': 0.10,      # ~10% commission (electronics only)
+    'Chrono24':    0.065,     # 6.5% seller fee (watches only)
+    'Vestiaire Collective': 0.12,  # ~12% commission (luxury bags/fashion)
+    'Fashionphile': 0.15,    # ~15% consignment (luxury bags)
+    'Rebag':       0.15,     # ~15% consignment (luxury bags)
+    "Sotheby's":   0.20,     # ~20% effective seller cost (auction houses)
+    'Heritage Auctions': 0.20,  # ~20% effective seller cost
+    "Christie's":  0.20,     # ~20% effective seller cost
+    'Facebook Marketplace': 0.0,  # 0% local pickup
+    'OfferUp':     0.0,      # 0% local pickup
+    'Chairish':    0.20,     # ~20% consignment (furniture/decor)
 }
 
 
@@ -30,7 +42,7 @@ def _get_ebay_fee(product_info: dict) -> float:
     pt = (product_info.get('product_type', '') or '').lower()
     if any(k in pt for k in ['sneaker', 'shoe', 'trainer', 'boot', 'sandal', 'jordan', 'yeezy']):
         return EBAY_FEES_BY_CATEGORY['sneakers']
-    if any(k in pt for k in ['phone', 'laptop', 'tablet', 'console', 'electronic', 'camera', 'headphone', 'airpod', 'ipad', 'iphone', 'macbook', 'playstation', 'xbox']):
+    if any(k in pt for k in ['phone', 'smartphone', 'laptop', 'tablet', 'console', 'electronic', 'camera', 'headphone', 'airpod', 'ipad', 'iphone', 'macbook', 'playstation', 'xbox', 'computer', 'gaming']):
         return EBAY_FEES_BY_CATEGORY['electronics']
     if any(k in pt for k in ['bag', 'handbag', 'purse', 'wallet', 'backpack', 'tote']):
         return EBAY_FEES_BY_CATEGORY['bags']
@@ -52,7 +64,7 @@ def _get_category_key(product_info: dict) -> str:
         return 'bags'
     if 'watch' in pt:
         return 'watches'
-    if any(k in pt for k in ['phone', 'laptop', 'tablet', 'console', 'electronic', 'camera', 'headphone']):
+    if any(k in pt for k in ['phone', 'smartphone', 'laptop', 'tablet', 'console', 'electronic', 'camera', 'headphone', 'computer', 'gaming']):
         return 'electronics'
     if any(k in pt for k in ['clothing', 'jacket', 'shirt', 'hoodie', 'dress', 'jeans', 'coat', 'top', 'trousers', 'sweatshirt']):
         return 'clothing'
@@ -67,11 +79,38 @@ def _is_platform_eligible(platform: str, product_info: dict) -> bool:
     cat = _get_category_key(product_info)
 
     if platform == 'StockX':
-        # StockX requires deadstock/new items only
-        return condition in ('deadstock', 'new with tags')
+        # StockX requires deadstock/new items only; sneakers and streetwear focus
+        if condition not in ('deadstock', 'new with tags'):
+            return False
+        return cat in ('sneakers', 'clothing', 'collectibles', 'default')
     if platform == 'Grailed':
         # Grailed is primarily clothing, sneakers, streetwear
         return cat in ('sneakers', 'clothing', 'default')
+    if platform == 'Depop':
+        # Depop is fashion-focused — not relevant for electronics/watches
+        return cat not in ('electronics', 'watches')
+    if platform == 'Poshmark':
+        # Poshmark is fashion/home — not relevant for electronics
+        return cat not in ('electronics',)
+    if platform == 'Swappa':
+        # Swappa is electronics-only
+        return cat == 'electronics'
+    if platform == 'Back Market':
+        # Back Market is electronics-only
+        return cat == 'electronics'
+    if platform == 'Chrono24':
+        # Chrono24 is watches-only
+        return cat == 'watches'
+    if platform in ('Vestiaire Collective', 'Fashionphile', 'Rebag'):
+        # Luxury consignment — bags, watches, jewelry, high-end fashion
+        return cat in ('bags', 'watches', 'clothing')
+    if platform in ("Sotheby's", "Christie's", 'Heritage Auctions'):
+        # Auction houses — watches, bags, collectibles (not electronics/general clothing)
+        return cat in ('watches', 'bags', 'collectibles')
+    if platform == 'Chairish':
+        # Chairish is furniture/home decor only
+        return 'furniture' in (product_info.get('product_type', '') or '').lower()
+    # Facebook Marketplace and OfferUp work for everything
     return True
 
 

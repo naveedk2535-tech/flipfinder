@@ -4,15 +4,55 @@ from agents.base import run_with_search, parse_first_json
 logger = logging.getLogger(__name__)
 
 
+def _scrape_url_context(url: str) -> str:
+    """Scrape a URL and return structured context for the extraction prompt."""
+    try:
+        from utils.scraper import scrape_listing_url
+        data = scrape_listing_url(url)
+        if not data:
+            return ''
+
+        lines = [
+            '━━━ SCRAPED PAGE DATA (AUTHORITATIVE — this is the actual listing) ━━━'
+        ]
+        if data.get('title'):
+            lines.append(f'LISTING TITLE: {data["title"]}')
+        if data.get('price'):
+            currency = data.get('currency', 'USD')
+            lines.append(f'LISTING PRICE: {data["price"]} {currency}')
+        if data.get('condition'):
+            lines.append(f'CONDITION: {data["condition"]}')
+        if data.get('item_specifics'):
+            specs = ', '.join(f'{k}: {v}' for k, v in data['item_specifics'].items())
+            lines.append(f'ITEM SPECIFICS: {specs}')
+        if data.get('description'):
+            lines.append(f'DESCRIPTION: {data["description"][:500]}')
+
+        lines.append(
+            'IMPORTANT: The product identity above is from the ACTUAL listing page. '
+            'Your identification MUST match this data. Do NOT identify a different product.'
+        )
+        lines.append('')
+        return '\n'.join(lines)
+    except Exception as e:
+        logger.warning(f"URL scrape failed, continuing with search only: {e}")
+        return ''
+
+
 def extract_product_details(text_input=None, image_base64=None, image_media_type=None, link=None):
     """Extract structured product details from image, text, or URL with expert chain-of-thought reasoning."""
     try:
         prefix = ""
         if link:
+            # First, scrape the actual page to get authoritative product data
+            scraped_context = _scrape_url_context(link)
+
             prefix = (
-                f'First use web search to fetch and read this URL: {link}\n'
+                f'{scraped_context}'
+                f'Also use web search to fetch and read this URL for additional context: {link}\n'
                 f'IMPORTANT: Find and record the exact asking/sale price shown on that page as "listing_price" in your JSON output. If no price is found, set listing_price to 0.\n'
                 f'IMPORTANT: Detect the CURRENCY of the listing price. Set "listing_currency" to the ISO 4217 code (e.g. "USD", "GBP", "EUR", "PKR", "INR", "CAD", "AUD", "JPY"). Look for currency symbols ($/£/€/₹/¥/Rs), domain TLD (.pk=PKR, .co.uk=GBP, .de=EUR, .in=INR, .au=AUD, .ca=CAD, .jp=JPY), or explicit currency text on the page. If the site is clearly non-US, do NOT assume USD.\n'
+                f'CRITICAL: If scraped page data is provided above, the product title from that data is the GROUND TRUTH. Your brand, model, and product_type MUST match the listing title — do NOT substitute a different product.\n'
                 f'Then analyse the product found there.\n\n'
             )
 

@@ -886,6 +886,88 @@
   </div>
   {% endif %}
 
+  <!-- Community Buzz (Detailed View — always expanded) -->
+  {% if current_user.subscription_tier in ('pro','premium') or current_user.is_admin %}
+    <div class="card p-6 mb-8" style="border-top:3px solid rgba(249,115,22,0.6);">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="message-circle" class="w-4 h-4 text-orange-400"></i>
+        </div>
+        <div>
+          <h2 class="font-heading font-bold text-lg">Community Buzz</h2>
+          <p class="text-[#52526a] text-xs">Reddit &amp; YouTube</p>
+        </div>
+      </div>
+    {% if social and (social.get("reddit") or social.get("youtube")) %}
+      {% if social.get("reddit") %}
+      <h3 class="font-semibold text-sm text-[#f1f5f9]/60 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+        Reddit Discussions
+      </h3>
+      <div class="space-y-2 mb-5">
+        {% for post in social.reddit[:5] %}
+        <a href="{{ post.link }}" target="_blank" rel="noopener"
+          class="block bg-[#111118] border border-[#252532] hover:border-orange-500/40 rounded-xl px-4 py-3 text-sm transition-colors">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="font-medium text-[#f1f5f9] line-clamp-1 flex-1">{{ post.title }}</div>
+            {% if post.get("subreddit") %}
+            <span class="text-[#52526a] text-xs flex-shrink-0">{{ post.subreddit }}</span>
+            {% endif %}
+          </div>
+          {% if post.snippet %}
+          <div class="text-[#52526a] text-xs line-clamp-2">{{ post.snippet }}</div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if social.get("youtube") %}
+      <h3 class="font-semibold text-sm text-[#f1f5f9]/60 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+        YouTube Videos
+      </h3>
+      <div class="grid grid-cols-2 gap-3">
+        {% for v in social.youtube[:4] %}
+        <a href="{{ v.link }}" target="_blank" rel="noopener"
+          class="bg-[#111118] border border-[#252532] hover:border-red-500/40 rounded-xl overflow-hidden transition-colors">
+          {% if v.thumbnail %}
+          <div class="w-full aspect-video bg-[#0a0a0f] overflow-hidden">
+            <img src="{{ v.thumbnail }}" alt="" class="w-full h-full object-cover">
+          </div>
+          {% endif %}
+          <div class="p-3">
+            <div class="text-xs font-medium text-[#f1f5f9] line-clamp-2 mb-1">{{ v.title }}</div>
+            <div class="text-[#52526a] text-xs">{{ v.channel }}{% if v.views %} · {{ v.views }}{% endif %}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="bg-[#111118] rounded-xl p-6 text-center">
+        <i data-lucide="search-x" class="w-8 h-8 text-[#52526a] mx-auto mb-2"></i>
+        <p class="text-[#52526a] text-sm">No Reddit or YouTube discussions found for this product.</p>
+      </div>
+    {% endif %}
+    </div>
+  {% else %}
+  <!-- Community Buzz locked teaser for free users (Detailed View) -->
+  <div class="card p-6 mb-8" style="border-top:3px solid rgba(249,115,22,0.3);">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="message-circle" class="w-4 h-4 text-orange-400"></i>
+      </div>
+      <h2 class="font-heading font-bold text-lg flex-1">Community Buzz</h2>
+      <span class="bg-orange-500/15 text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-500/25">Pro</span>
+    </div>
+    <div class="text-center py-4">
+      <i data-lucide="lock" class="w-6 h-6 text-orange-400 mx-auto mb-2"></i>
+      <p class="text-sm text-[#52526a]">See Reddit discussions and YouTube videos about this product.</p>
+      <a href="{{ url_for('billing.pricing') }}" class="btn-primary px-5 py-2 text-sm mt-3 inline-block">Upgrade to Pro</a>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Google Trends -->
   {% set trends_kw = extracted.get("search_query") or analysis.raw_input %}
   {% if trends_kw %}
@@ -937,15 +1019,20 @@
         </div>
         <div>
           <h2 class="font-heading font-bold text-lg">Buy Options</h2>
-          <p class="text-[#52526a] text-xs">Cheapest active listings found on eBay</p>
+          <p class="text-[#52526a] text-xs">Cheapest prices across eBay, Amazon, and more</p>
         </div>
       </div>
 
       {% set buy_links = sourcing.get("buy_links", []) %}
       {% if buy_links %}
       <div class="space-y-3">
-        {% for item in buy_links[:5] %}
+        {% for item in buy_links[:8] %}
         <div class="flex items-center justify-between bg-[#111118] rounded-xl px-4 py-3 text-sm">
+          {% if item.get("image_url") %}
+          <div class="w-12 h-12 rounded-lg bg-[#0a0a0f] overflow-hidden flex-shrink-0 mr-3">
+            <img src="{{ item.image_url }}" alt="" class="w-full h-full object-contain">
+          </div>
+          {% endif %}
           <div class="flex-1 min-w-0">
             <div class="font-medium text-[#f1f5f9] truncate">{{ item.title }}</div>
             <div class="text-[#52526a] text-xs flex items-center gap-2 mt-0.5">
@@ -978,7 +1065,7 @@
       {% else %}
       <div class="bg-[#111118] rounded-xl p-6 text-center">
         <i data-lucide="search-x" class="w-8 h-8 text-[#52526a] mx-auto mb-2"></i>
-        <p class="text-[#52526a] text-sm">No active eBay listings found. Check the sell platforms below for current availability.</p>
+        <p class="text-[#52526a] text-sm">No active listings found across platforms. Check the sell platforms below for current availability.</p>
       </div>
       {% endif %}
     </div>
@@ -1030,6 +1117,34 @@
       </div>
       {% endif %}
     </div>
+
+    <!-- Forum & Deal Links -->
+    {% set forum_links = sourcing.get("forum_links", []) %}
+    {% if forum_links %}
+    <div class="card p-6 mb-6" style="border-top:3px solid rgba(234,179,8,0.6);">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="message-square" class="w-4 h-4 text-yellow-400"></i>
+        </div>
+        <div>
+          <h2 class="font-heading font-bold text-lg">Forums & Deal Sources</h2>
+          <p class="text-[#52526a] text-xs">Community discussions, price tracking, and deal alerts</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {% for f in forum_links %}
+        <a href="{{ f.url }}" target="_blank" rel="noopener"
+          class="group flex items-center gap-3 bg-[#111118] border border-[#252532] hover:border-yellow-500/40 rounded-xl px-4 py-3 transition-colors">
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-sm text-[#f1f5f9] group-hover:text-yellow-300 transition-colors">{{ f.name }}</div>
+            <div class="text-[#52526a] text-xs truncate">{{ f.desc }}</div>
+          </div>
+          <i data-lucide="external-link" class="w-3 h-3 text-[#52526a] group-hover:text-yellow-400 flex-shrink-0"></i>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
     <p class="text-[#52526a] text-xs text-center mb-4">
       Links open in a new tab. Prices and availability may change. Always verify before purchasing.
