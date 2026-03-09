@@ -16,6 +16,7 @@ from agents.pricing_agent import research_prices
 from agents.sourcing_agent import find_sourcing_deals
 from agents.arbitrage_agent import calculate_arbitrage
 from agents.trends_agent import get_trend_data, get_social_data
+from utils.currency import convert_to_usd
 
 analysis_bp = Blueprint('analysis', __name__, url_prefix='/analyse')
 
@@ -54,6 +55,19 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
                 simple_query = ' '.join(p for p in parts if p and p.lower() not in ('unknown', '')).strip()
                 if simple_query:
                     search_query = simple_query
+
+            # Currency conversion: if listing price is in a foreign currency, convert to USD
+            listing_currency = (extracted.get('listing_currency') or 'USD').upper()
+            raw_listing_price = float(extracted.get('listing_price', 0) or 0)
+            if listing_currency != 'USD' and raw_listing_price > 0:
+                converted_price, conv_method = convert_to_usd(raw_listing_price, listing_currency)
+                extracted['listing_price_original'] = raw_listing_price
+                extracted['listing_price_original_currency'] = listing_currency
+                extracted['listing_price'] = converted_price
+                extracted['currency_conversion_method'] = conv_method
+                # Re-save extracted with converted price
+                analysis.extracted_product = json.dumps(extracted)
+                db.session.commit()
 
             # When a URL was submitted, the listing price on that page IS the buy price.
             # Pass it through so the sourcing agent anchors cheapest_found to the real price.

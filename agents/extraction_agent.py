@@ -12,6 +12,7 @@ def extract_product_details(text_input=None, image_base64=None, image_media_type
             prefix = (
                 f'First use web search to fetch and read this URL: {link}\n'
                 f'IMPORTANT: Find and record the exact asking/sale price shown on that page as "listing_price" in your JSON output. If no price is found, set listing_price to 0.\n'
+                f'IMPORTANT: Detect the CURRENCY of the listing price. Set "listing_currency" to the ISO 4217 code (e.g. "USD", "GBP", "EUR", "PKR", "INR", "CAD", "AUD", "JPY"). Look for currency symbols ($/£/€/₹/¥/Rs), domain TLD (.pk=PKR, .co.uk=GBP, .de=EUR, .in=INR, .au=AUD, .ca=CAD, .jp=JPY), or explicit currency text on the page. If the site is clearly non-US, do NOT assume USD.\n'
                 f'Then analyse the product found there.\n\n'
             )
 
@@ -88,6 +89,7 @@ Return ONLY valid JSON (no markdown, no extra text). All fields required:
   "auction_relevance": "",
   "estimated_retail_price": 0,
   "listing_price": 0,
+  "listing_currency": "USD",
   "demand_level": "medium",
   "limited_edition": false,
   "variant_demand_note": "",
@@ -111,6 +113,7 @@ Field notes:
   Watches: 40-42mm most liquid. Under 38mm or over 44mm: slower, -5 to -10%.
   If no size known: "Size unknown — cannot assess size premium."
 - authenticity_indicators: the 3–5 specific checkpoints buyers MUST verify for this exact brand/model
+- listing_currency: ISO 4217 currency code of the listing price. "USD" if US site or price in dollars. "PKR" for Pakistani rupees, "GBP" for British pounds, "EUR" for euros, "INR" for Indian rupees, "CAD" for Canadian dollars, "AUD" for Australian dollars, "JPY" for Japanese yen, etc. CRITICAL: detect from currency symbol, site domain, or page content — do NOT default to USD for non-US sites.
 - search_query: precise and optimised — brand + exact model + colorway + size + condition (e.g. "Nike Air Jordan 1 High OG University Blue size 10 Very Good")"""
 
         if text_input and not image_base64:
@@ -156,6 +159,7 @@ Field notes:
         "auction_relevance": "",
         "estimated_retail_price": 0,
         "listing_price": 0,
+        "listing_currency": "USD",
         "demand_level": "medium",
         "limited_edition": False,
         "variant_demand_note": "",
