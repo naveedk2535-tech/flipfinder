@@ -271,7 +271,7 @@ NOTE: All numeric calculations (ROI, fees, net profit, verdict, opportunity scor
    - Simple clothing: 1-2 hrs | Sneakers/bags: 2-3 hrs
    - Electronics: 2-4 hrs | Luxury watches: 3-5 hrs
 
-3. **recommendation**: Specific actionable recommendation for THIS item — whether it's worth flipping, key risks, what to watch for. Mention if the item meets/misses minimum viable ROI for its price tier.
+3. **recommendation**: 1-2 SHORT sentences MAXIMUM. Plain English, no jargon. Just say if it's worth buying and the single biggest reason why or why not. Example: "Good flip — buy under $150 and you'll clear $60 profit easily." or "Pass on this one — the buy price is too close to what it sells for." Do NOT write a paragraph.
 
 4. **listing_tips**: 5 specific, actionable tips for THIS exact item:
    - Platform choice (which platform first and why for this item)
@@ -305,6 +305,11 @@ CRITICAL: Set buy_price to cheapest_found from sourcing (or avg_source_price). S
         logger.info(f"Arbitrage raw response (first 300): {raw[:300]}")
         result = parse_first_json(raw)
         if result:
+            # Truncate recommendation to ~2 sentences if AI rambled
+            rec = result.get('recommendation', '')
+            if rec and len(rec) > 200:
+                sentences = rec.split('. ')
+                result['recommendation'] = '. '.join(sentences[:2]).rstrip('.') + '.'
             # Python recalculates all math deterministically
             result = _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
             return result
