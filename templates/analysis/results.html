@@ -123,7 +123,7 @@
   </div>
 
   <!-- View Tabs -->
-  <div class="flex gap-2 mb-6">
+  <div class="flex gap-2 mb-6 overflow-x-auto">
     <button id="tab-overview" onclick="switchView('overview')"
       class="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white">
       Overview
@@ -356,6 +356,32 @@
         </div>
       </div>
     </details>
+    {% endif %}
+
+    <!-- Export CTA -->
+    {% if not public_view|default(false) %}
+    <div class="mt-6 p-4 rounded-xl border border-[#252532] bg-[#111118] flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="file-text" class="w-4 h-4 text-purple-400"></i>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-[#f1f5f9]">Save this report</p>
+          <p class="text-xs text-[#52526a]">Download a clean PDF to share or reference later</p>
+        </div>
+      </div>
+      {% if current_user.subscription_tier == 'premium' or current_user.is_admin %}
+      <a href="{{ url_for('analysis.export', id=analysis.id) }}" target="_blank"
+        class="flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-all">
+        <i data-lucide="download" class="w-4 h-4"></i> Export PDF
+      </a>
+      {% else %}
+      <a href="{{ url_for('billing.pricing') }}"
+        class="flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg bg-[#1a1a24] border border-purple-500/30 text-purple-400 font-semibold transition-all hover:bg-purple-500/10">
+        <i data-lucide="lock" class="w-3.5 h-3.5"></i> Upgrade to Premium
+      </a>
+      {% endif %}
+    </div>
     {% endif %}
 
     <!-- Switch to detailed nudge -->
@@ -997,6 +1023,32 @@
     Figures are based on a mix of actual sold transaction data and AI model estimates. Price competitively, verify live listings before buying or selling, and utilise the platform search links above to confirm current market rates.
   </p>
 
+  <!-- Export CTA -->
+  {% if not public_view|default(false) %}
+  <div class="mt-6 mb-6 p-4 rounded-xl border border-[#252532] bg-[#111118] flex items-center justify-between flex-wrap gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="file-text" class="w-4 h-4 text-purple-400"></i>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-[#f1f5f9]">Save this report</p>
+        <p class="text-xs text-[#52526a]">Download a clean PDF to share or reference later</p>
+      </div>
+    </div>
+    {% if current_user.subscription_tier == 'premium' or current_user.is_admin %}
+    <a href="{{ url_for('analysis.export', id=analysis.id) }}" target="_blank"
+      class="flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-all">
+      <i data-lucide="download" class="w-4 h-4"></i> Export PDF
+    </a>
+    {% else %}
+    <a href="{{ url_for('billing.pricing') }}"
+      class="flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg bg-[#1a1a24] border border-purple-500/30 text-purple-400 font-semibold transition-all hover:bg-purple-500/10">
+      <i data-lucide="lock" class="w-3.5 h-3.5"></i> Upgrade to Premium
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <!-- Actions -->
   <div class="flex gap-3 flex-wrap">
     <a href="{{ url_for("analysis.input_page") }}" class="btn-primary px-6 py-3">
@@ -1242,4 +1294,48 @@
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 </script>
+
+<style>
+/* Mobile responsive overrides */
+@media (max-width: 480px) {
+  /* Tabs: full width, smaller text */
+  #tab-overview, #tab-detailed, #tab-links { font-size: 0.75rem; padding: 0.5rem 0.75rem; flex: 1; text-align: center; }
+
+  /* Hero text sizes */
+  .arbitrage-hero .font-heading.text-7xl { font-size: 3rem; }
+  .text-6xl { font-size: 2.5rem !important; }
+  .text-5xl { font-size: 2rem !important; }
+  .text-3xl { font-size: 1.5rem !important; }
+
+  /* Buy link items: stack price + button below */
+  #links-view .space-y-3 > div { flex-wrap: wrap; }
+  #links-view .space-y-3 > div > .flex-shrink-0.ml-3 { margin-left: 0; margin-top: 0.5rem; width: 100%; justify-content: space-between; }
+
+  /* Platform breakdown: 2 cols, smaller text */
+  .platform-card { padding: 0.5rem; }
+  .platform-card .text-lg { font-size: 0.875rem; }
+
+  /* Bar chart: horizontal scroll on overflow */
+  .flex.items-end.gap-3.h-24 { overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; }
+  .flex.items-end.gap-3.h-24 > div { min-width: 3.5rem; }
+
+  /* Action bar buttons: smaller on mobile */
+  .flex.items-center.gap-2 > a, .flex.items-center.gap-2 > button, .flex.items-center.gap-2 > form button { font-size: 0.65rem; padding: 0.25rem 0.5rem; }
+
+  /* Export CTA: stack vertically */
+  .flex.items-center.justify-between.flex-wrap.gap-3 { flex-direction: column; align-items: stretch; text-align: center; }
+
+  /* Grid 3-col overview flow: keep 3 cols but smaller */
+  .grid.grid-cols-3.gap-3 .text-3xl { font-size: 1.25rem !important; }
+  .grid.grid-cols-3.gap-3 .card { padding: 0.75rem; }
+}
+
+@media (max-width: 640px) {
+  /* Market prices 3-col: keep but smaller */
+  .grid.grid-cols-3.gap-4 .text-xl { font-size: 1rem; }
+
+  /* Platform grid: always 2 cols */
+  .grid.grid-cols-2.lg\:grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
 {% endblock %}

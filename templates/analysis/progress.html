@@ -126,6 +126,28 @@
     </div>
   </div>
 
+  <!-- What others are flipping -->
+  <div id="trending-section" class="mb-6">
+    <div class="card p-5 sm:p-6" style="border-top: 3px solid rgba(168,85,247,0.4);">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="flame" class="w-4 h-4 text-purple-400"></i>
+        </div>
+        <div>
+          <h2 class="font-heading font-bold text-base">What Others Are Flipping</h2>
+          <p class="text-[#52526a] text-xs">Recent searches from the FlipAFind community</p>
+        </div>
+      </div>
+      <div id="trending-list">
+        <div class="space-y-2">
+          <div class="skeleton-line h-10 w-full rounded-xl"></div>
+          <div class="skeleton-line h-10 w-full rounded-xl"></div>
+          <div class="skeleton-line h-10 w-full rounded-xl"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Complete / Error actions -->
   <div id="complete-actions" class="hidden text-center">
     <div class="mb-4">
@@ -422,6 +444,44 @@ const timerTick = setInterval(() => {
 
 pollInterval = setInterval(poll, 2000);
 poll(); // immediate first call
+
+// Fetch trending items
+(async function loadTrending() {
+  try {
+    const resp = await fetch("{{ url_for('analysis.trending') }}");
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const items = data.items || [];
+    if (items.length === 0) {
+      document.getElementById('trending-section').style.display = 'none';
+      return;
+    }
+    const catColors = {
+      'Sneakers': 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+      'Clothing': 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+      'Bags': 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+      'Watches': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      'Electronics': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+      'Collectibles': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+      'Books & Media': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    };
+    const html = items.map(it => {
+      const roiNum = parseInt(it.roi || 0);
+      const roiColor = roiNum >= 50 ? 'text-emerald-400' : roiNum >= 0 ? 'text-amber-400' : 'text-red-400';
+      const catCls = catColors[it.category] || 'bg-[#252532] text-[#52526a] border-[#252532]';
+      return `<div class="flex items-center justify-between bg-[#111118] rounded-xl px-4 py-2.5 text-sm hover:bg-[#16161f] transition-colors">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full border ${catCls} flex-shrink-0">${esc(it.category || 'Other')}</span>
+          <span class="text-[#f1f5f9] font-medium truncate">${esc(it.name)}</span>
+        </div>
+        <span class="font-bold ${roiColor} flex-shrink-0 ml-3">${roiNum > 0 ? '+' : ''}${roiNum}% ROI</span>
+      </div>`;
+    }).join('');
+    document.getElementById('trending-list').innerHTML = `<div class="space-y-2">${html}</div>`;
+  } catch(e) {
+    document.getElementById('trending-section').style.display = 'none';
+  }
+})();
 </script>
 
 <style>

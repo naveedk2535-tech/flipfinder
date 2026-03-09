@@ -123,13 +123,21 @@ def create_app():
     app.register_blueprint(api_bp)
     csrf.exempt(api_bp)
 
+    # IPs to exclude from visitor log (admin traffic)
+    EXCLUDED_IPS = {'96.227.109.218'}
+
     @app.before_request
     def track_visitor():
         from models.visitor import Visitor
         if not request.path.startswith('/static'):
+            ip = request.headers.get('X-Forwarded-For', request.remote_addr) or ''
+            # X-Forwarded-For can be comma-separated; take the first (client) IP
+            client_ip = ip.split(',')[0].strip()
+            if client_ip in EXCLUDED_IPS:
+                return
             try:
                 v = Visitor(
-                    ip_address=request.headers.get('X-Forwarded-For', request.remote_addr),
+                    ip_address=client_ip,
                     path=request.path[:255],
                     method=request.method,
                     user_agent=request.headers.get('User-Agent', '')[:512],

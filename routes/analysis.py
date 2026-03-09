@@ -685,3 +685,49 @@ def toggle_public(id):
     db.session.commit()
     public_url = url_for('analysis.public_results', id=id, _external=True) if analysis.is_public else None
     return jsonify({'is_public': analysis.is_public, 'public_url': public_url})
+
+
+@analysis_bp.route('/trending')
+@login_required
+def trending():
+    """Return recent analyses (anonymized) for the 'What others are flipping' widget."""
+    try:
+        since = datetime.utcnow() - timedelta(days=7)
+        recent = Analysis.query.filter(
+            Analysis.status == 'complete',
+            Analysis.created_at >= since,
+            Analysis.extracted_product.isnot(None),
+        ).order_by(Analysis.created_at.desc()).limit(30).all()
+
+        items = []
+        seen = set()
+        for a in recent:
+            ext = a.get_extracted()
+            if not ext:
+                continue
+            name = ' '.join(
+                p for p in [ext.get('brand', ''), ext.get('product_type', ''), ext.get('model', '')]
+                if p and p.lower() not in ('unknown', '')
+            ).strip()
+            if not name or name.lower() in seen:
+                continue
+            seen.add(name.lower())
+
+            arb = a.get_arbitrage()
+            roi = arb.get('roi_percent', 0) if arb else 0
+            verdict = arb.get('verdict', '') if arb else ''
+            category = a.get_category() if hasattr(a, 'get_category') else 'Other'
+
+            items.append({
+                'name': name[:60],
+                'category': category,
+                'roi': round(float(roi or 0)),
+                'verdict': verdict,
+            })
+            if len(items) >= 10:
+                break
+
+        return jsonify({'items': items})
+    except Exception as e:
+        logger.warning(f"Trending endpoint error: {e}")
+        return jsonify({'items': []})

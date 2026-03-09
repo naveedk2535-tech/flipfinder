@@ -133,10 +133,9 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
     result['sell_price'] = round(sell, 2)
     result['gross_profit'] = round(sell - buy, 2)
 
-    # Build platform fee map
+    # Build platform fee map (resolve eBay None → actual category fee)
     ebay_fee_pct = _get_ebay_fee(product_info)
-    platforms = dict(PLATFORM_FEES)
-    platforms['eBay'] = ebay_fee_pct
+    platforms = {k: (v if v is not None else ebay_fee_pct) for k, v in PLATFORM_FEES.items()}
 
     # Get shipping estimate from AI (or use default)
     shipping = result.get('shipping_cost_est', 10.0) or 10.0
@@ -164,7 +163,7 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
 
     result['platform_breakdown'] = breakdown
     result['best_platform'] = best_plat
-    best_fee_pct = platforms.get(best_plat, 0.135)
+    best_fee_pct = platforms.get(best_plat, 0.135) or 0.135
     result['platform_fee'] = round(sell * best_fee_pct, 2)
     result['net_profit'] = round(sell - buy - result['platform_fee'], 2)
     result['true_net_profit'] = round(result['net_profit'] - shipping, 2)

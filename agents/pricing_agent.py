@@ -446,8 +446,9 @@ Field notes:
                 if result['recommended_sell_price'] > ceiling:
                     result['recommended_sell_price'] = round(result['avg_sold'] * 0.82, 2)
             # condition_multiplier = 1.0 means the AI used condition-matched data directly (correct)
-            # condition_multiplier = 0 or missing means it wasn't set — use our calculated fallback
-            if not result.get('condition_multiplier') and result.get('condition_multiplier') != 1.0:
+            # None/0/missing means it wasn't set — use our calculated fallback
+            cm = result.get('condition_multiplier')
+            if cm is None or cm == 0:
                 result['condition_multiplier'] = cond_mult
 
             # Supply depth adjustment: if oversupplied/saturated, reduce recommended_sell_price
