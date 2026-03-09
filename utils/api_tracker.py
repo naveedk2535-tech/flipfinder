@@ -27,6 +27,7 @@ LIMITS = {
     'serpapi/key2':{'label': 'SerpAPI key2','rpm': None, 'rpd': None,  'note': '100/mo free or paid'},
     'youtube/key1':{'label': 'YouTube API', 'rpm': None, 'rpd': 10000, 'note': 'units/day'},
     'reddit/oauth':{'label': 'Reddit OAuth','rpm': 60,   'rpd': None,  'note': 'requests/min'},
+    'ebay/browse': {'label': 'eBay Browse', 'rpm': None, 'rpd': 5000,  'note': 'Browse API'},
 }
 
 

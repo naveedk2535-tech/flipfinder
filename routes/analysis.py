@@ -17,8 +17,76 @@ from agents.sourcing_agent import find_sourcing_deals
 from agents.arbitrage_agent import calculate_arbitrage
 from agents.trends_agent import get_trend_data, get_social_data
 from utils.currency import convert_to_usd
+from utils.ebay import search_ebay
+from urllib.parse import quote_plus
+import logging
+import requests
+
+logger = logging.getLogger(__name__)
 
 analysis_bp = Blueprint('analysis', __name__, url_prefix='/analyse')
+
+# Platform fee rates for sell link net-profit estimates
+_PLATFORM_FEES = {
+    'eBay': 0.1335,
+    'StockX': 0.125,
+    'Depop': 0.10,
+    'Poshmark': 0.20,
+    'Mercari': 0.10,
+    'Grailed': 0.119,
+}
+
+# Grailed-eligible categories
+_GRAILED_CATEGORIES = {'sneaker', 'shoe', 'clothing', 'apparel', 'jacket', 'hoodie',
+                       'shirt', 'pants', 'streetwear', 'dress', 'coat', 'jeans'}
+
+
+def _generate_sell_links(query: str, product_type: str, sell_price: float) -> list[dict]:
+    """Generate platform search URLs with fee/net estimates."""
+    q = quote_plus(query)
+    platforms = [
+        {'platform': 'eBay',     'url': f'https://www.ebay.com/sch/i.html?_nkw={q}'},
+        {'platform': 'StockX',   'url': f'https://stockx.com/search?s={q}'},
+        {'platform': 'Depop',    'url': f'https://www.depop.com/search/?q={q}'},
+        {'platform': 'Poshmark', 'url': f'https://poshmark.com/search?query={q}'},
+        {'platform': 'Mercari',  'url': f'https://www.mercari.com/search/?keyword={q}'},
+    ]
+    # Add Grailed only for clothing/sneakers
+    pt = product_type.lower() if product_type else ''
+    if any(cat in pt for cat in _GRAILED_CATEGORIES):
+        platforms.append({'platform': 'Grailed', 'url': f'https://www.grailed.com/shop?query={q}'})
+
+    for p in platforms:
+        fee_pct = _PLATFORM_FEES.get(p['platform'], 0.15)
+        p['fee_pct'] = round(fee_pct * 100, 1)
+        if sell_price > 0:
+            p['est_net'] = round(sell_price * (1 - fee_pct), 2)
+        else:
+            p['est_net'] = 0
+
+    # Sort by highest net profit
+    platforms.sort(key=lambda x: x['est_net'], reverse=True)
+    return platforms
+
+
+def _validate_links(urls: list[str]) -> dict[str, bool]:
+    """Validate URLs with parallel HEAD requests. Returns {url: verified}."""
+    results = {}
+    if not urls:
+        return results
+
+    def _check(url):
+        try:
+            resp = requests.head(url, timeout=5, allow_redirects=True,
+                                 headers={'User-Agent': 'Mozilla/5.0'})
+            return url, resp.status_code < 400
+        except Exception:
+            return url, False
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        for url, ok in executor.map(_check, urls):
+            results[url] = ok
+    return results
 
 
 def allowed_file(filename):
@@ -96,6 +164,33 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
                         f"Tight market: cheapest listing (${cheapest:.0f}) is within {round(spread_pct*100)}% "
                         f"of median sold price (${avg_sold:.0f}). Profit margin will be very thin after fees."
                     )
+
+            # eBay Browse API: fetch real active listings for buy links
+            ebay_listings = []
+            try:
+                ebay_listings = search_ebay(search_query, limit=10)
+            except Exception as e:
+                logger.warning(f"eBay search failed: {e}")
+
+            # Build buy_links (top 5 cheapest eBay listings)
+            buy_links = ebay_listings[:5]
+
+            # Build sell_links (platform search URLs with fee estimates)
+            sell_price = pricing.get('recommended_sell_price', 0) or 0
+            product_type = (extracted.get('product_type') or '').lower()
+            sell_links = _generate_sell_links(search_query, product_type, sell_price)
+
+            # Validate all URLs in parallel
+            all_urls = [l['url'] for l in buy_links if l.get('url')]
+            all_urls += [l['url'] for l in sell_links if l.get('url')]
+            verified_urls = _validate_links(all_urls)
+            for link in buy_links:
+                link['verified'] = verified_urls.get(link.get('url', ''), False)
+            for link in sell_links:
+                link['verified'] = verified_urls.get(link.get('url', ''), False)
+
+            sourcing['buy_links'] = buy_links
+            sourcing['sell_links'] = sell_links
 
             analysis.sourcing_results = json.dumps(sourcing)
             db.session.commit()
