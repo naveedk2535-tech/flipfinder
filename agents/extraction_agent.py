@@ -5,12 +5,69 @@ from agents.base import run_with_search, parse_first_json
 
 logger = logging.getLogger(__name__)
 
-# UTM and tracking params to strip from URLs
+# Universal tracking params to strip from ALL URLs
 _TRACKING_PARAMS = {
+    # UTM (standard)
     'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
-    's_kwcid', 'gclid', 'gad_source', 'gad_campaignid', 'fbclid', 'msclkid',
-    'dclid', 'twclid', 'ttclid', 'li_fat_id', 'mc_cid', 'mc_eid',
-    'ref', 'pla', 'srsltid',
+    'utm_id', 'utm_reader', 'utm_referrer', 'utm_name', 'utm_place',
+    'utm_source_platform', 'utm_brand', 'utm_campaignid', 'utm_channel',
+    'utm_cid', 'utm_creative', 'utm_keyword', 'utm_tag', 'utm_adset',
+    'utm_adgroup', 'utm_ad', 'utm_affiliate', 'utm_email',
+    # Google Ads & Search
+    'gclid', 'gclsrc', 'dclid', 'gad_source', 'gad_campaignid',
+    'gbraid', 'wbraid', 'srsltid', 'usqp', 'ved', 'ei', 'sxsrf',
+    'gs_lcp', 'gs_lp', 'rlz', 'aqs', 'iflsig', 'sca_esv', 'usg',
+    'sa', 'cd', 'oq', 'sclient', 'uact', 'sei',
+    # Facebook / Meta
+    'fbclid', 'fbadid', 'fb_action_ids', 'fb_action_types', 'fb_ref',
+    'fb_source', 'mibextid', 'extid', 'rdid', '__tn__', '__xts__',
+    'hc_ref', 'hc_location', 'tracking',
+    # Microsoft / Bing
+    'msclkid',
+    # TikTok / Snapchat / Pinterest
+    'ttclid', 'sccid', 'epik',
+    # LinkedIn / Twitter
+    'li_fat_id', 'twclid',
+    # Email marketing (Mailchimp, HubSpot, Klaviyo, Marketo)
+    'mc_cid', 'mc_eid', '_hsmi', '__hsfp', '__hssc', '__hstc', '_hsenc',
+    'hsa_acc', 'hsa_ad', 'hsa_cam', 'hsa_grp', 'hsa_kw', 'hsa_net',
+    'hsa_src', '_kx', 'mkt_tok',
+    # Affiliate networks (CJ, Awin, Impact, Rakuten, ShareASale)
+    'cjevent', 'cjdata', 'awc', 'clickref', 'irgwc', 'tduid',
+    'afftrack', 'xcust', 'aff_sub', 'aff_sub2', 'clickid', 'sscid',
+    # Shopify internal analytics
+    '_pos', '_sid', '_ss', '_v',
+    # Instagram / Reddit / YouTube share tracking
+    'igshid', 'igsh', 'rdt', 'share_id', 'si', 'pp', 'feature',
+    # Adobe / Matomo analytics
+    's_cid', 'pk_campaign', 'pk_medium', 'pk_source',
+    # Google Analytics cross-domain
+    '_ga', '_gl',
+    # Generic ad/campaign junk
+    's_kwcid', 'pla', 'icid', 'cmpid', 'nb_placement', 'nbt',
+}
+
+# Domain-specific params (only stripped for matching domains)
+_DOMAIN_PARAMS = {
+    'amazon': {'tag', 'ref', 'ref_', 'smid', 'pf_rd_p', 'pf_rd_r', 'pf_rd_m',
+               'pf_rd_s', 'pf_rd_t', 'pf_rd_i', 'pd_rd_r', 'pd_rd_w', 'pd_rd_wg',
+               'pd_rd_i', 'refRID', 'qid', 'sr', '_encoding', 'ie', 'linkCode',
+               'linkId', 'ascsubtag', 'creativeASIN', 'crid', 'sprefix', 'spIA',
+               'adId', 'qualifier', 'th', 'dchild', 'psc'},
+    'ebay': {'_trkparms', '_trksid', '_from', 'hash', 'mkevt', 'mkcid', 'mkrid',
+             'campid', 'toolid', 'customid', 'pub', 'icep_id', 'ipn'},
+    'walmart': {'wl13', 'wmlspartner', 'selectedSellerId', 'adid', 'veh',
+                'wl0', 'wl1', 'wl2', 'wl3', 'wl4', 'wl5'},
+    'target': {'afid', 'clkid', 'lnk', 'ref'},
+    'etsy': {'click_key', 'click_sum', 'ref', 'frs', 'sts'},
+    'aliexpress': {'aff_fcid', 'aff_fsk', 'aff_platform', 'aff_trace_key',
+                   'algo_expid', 'algo_pvid', 'curPageLogUid', 'pvid', 'spm'},
+    'wish': {'share', 'hide_login_modal'},
+    'bestbuy': {'ref', 'loc', 'acampID', 'irclickid'},
+    'mercari': {'ref'},
+    'poshmark': {'ref'},
+    'depop': {'ref'},
+    'stockx': {'ref'},
 }
 
 
@@ -18,8 +75,16 @@ def _clean_url(url: str) -> str:
     """Strip tracking/UTM params from a URL to get a clean product link."""
     try:
         parsed = urlparse(url)
+        domain = parsed.netloc.lower()
         params = parse_qs(parsed.query, keep_blank_values=False)
-        cleaned = {k: v for k, v in params.items() if k.lower() not in _TRACKING_PARAMS}
+
+        # Build the full set of params to strip for this domain
+        to_strip = set(_TRACKING_PARAMS)
+        for domain_key, domain_params in _DOMAIN_PARAMS.items():
+            if domain_key in domain:
+                to_strip |= domain_params
+
+        cleaned = {k: v for k, v in params.items() if k.lower() not in to_strip}
         clean_query = urlencode(cleaned, doseq=True)
         return urlunparse(parsed._replace(query=clean_query))
     except Exception:
@@ -47,13 +112,13 @@ def _extract_product_hint_from_url(url: str) -> str:
     return ''
 
 
-def _scrape_url_context(url: str) -> str:
-    """Scrape a URL and return structured context for the extraction prompt."""
+def _scrape_url_context(url: str) -> tuple[str, bool]:
+    """Scrape a URL and return (context_string, scrape_succeeded)."""
     try:
         from utils.scraper import scrape_listing_url
         data = scrape_listing_url(url)
         if not data:
-            return ''
+            return '', False
 
         lines = [
             '━━━ SCRAPED PAGE DATA (AUTHORITATIVE — this is the actual listing) ━━━'
@@ -76,14 +141,15 @@ def _scrape_url_context(url: str) -> str:
             'Your identification MUST match this data. Do NOT identify a different product.'
         )
         lines.append('')
-        return '\n'.join(lines)
+        return '\n'.join(lines), True
     except Exception as e:
         logger.warning(f"URL scrape failed, continuing with search only: {e}")
-        return ''
+        return '', False
 
 
 def extract_product_details(text_input=None, image_base64=None, image_media_type=None, link=None):
     """Extract structured product details from image, text, or URL with expert chain-of-thought reasoning."""
+    scrape_succeeded = True  # default true for non-link inputs
     try:
         prefix = ""
         if link:
@@ -91,7 +157,7 @@ def extract_product_details(text_input=None, image_base64=None, image_media_type
             clean_link = _clean_url(link)
 
             # First, scrape the actual page to get authoritative product data
-            scraped_context = _scrape_url_context(clean_link)
+            scraped_context, scrape_succeeded = _scrape_url_context(clean_link)
 
             # Extract product hint from URL slug (useful when scraping fails)
             url_hint = _extract_product_hint_from_url(clean_link)
@@ -226,6 +292,9 @@ Field notes:
             # Backwards compatibility: ensure condition_grade exists
             if not result.get('condition_grade'):
                 result['condition_grade'] = result.get('condition', 'Good')
+            # Flag if we couldn't scrape the original page (results may be less accurate)
+            if link and not scrape_succeeded:
+                result['scrape_failed'] = True
             return result
         else:
             logger.error(f"Extraction: no JSON found. Raw: {raw[:500]}")
@@ -258,5 +327,6 @@ Field notes:
         "variant_demand_note": "",
         "authenticity_indicators": "",
         "sell_platform_recommendation": "",
-        "search_query": fallback_query
+        "search_query": fallback_query,
+        "scrape_failed": bool(link),
     }

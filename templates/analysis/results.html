@@ -61,6 +61,25 @@
     {% endfor %}
   {% endif %}
 
+  <!-- Scrape failure warning -->
+  {% if extracted.get("scrape_failed") and analysis.input_type == 'link' %}
+  <div class="mb-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10">
+    <div class="flex items-start gap-3">
+      <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+      </div>
+      <div>
+        <p class="text-amber-400 font-semibold text-sm mb-1">Limited accuracy — website blocked our scan</p>
+        <p class="text-[#f1f5f9]/60 text-xs leading-relaxed">
+          The website you linked uses bot protection that prevented us from reading the product listing directly.
+          Our AI identified the product from the URL and web search instead, but <strong class="text-amber-300">pricing and product details may be less accurate</strong>.
+          For best results, try pasting the product title as text, or use a link from eBay, Amazon, or StockX.
+        </p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Action bar (only for the analysis owner, not public view) -->
   {% if not public_view|default(false) %}
   <div class="flex items-center justify-between mb-4 px-1 gap-3 flex-wrap">

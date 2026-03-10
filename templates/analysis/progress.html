@@ -241,6 +241,11 @@ function revealProduct(d) {
     .map(t => `<span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2.5 py-1 rounded-full text-xs">${esc(t)}</span>`)
     .join('');
 
+  const scrapeWarn = d.scrape_failed ? `<div class="mt-3 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center gap-2">
+    <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+    <span class="text-xs text-amber-300">Website blocked our scan — results based on AI search only and may be less accurate</span>
+  </div>` : '';
+
   document.getElementById('content-product').innerHTML = `
     <div class="flex flex-wrap items-start gap-2 mb-3">
       <h3 class="font-heading font-bold text-lg flex-1">${esc(name)}</h3>
@@ -249,6 +254,7 @@ function revealProduct(d) {
     </div>
     ${details ? `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">${details}</div>` : ''}
     ${tags ? `<div class="flex flex-wrap gap-2">${tags}</div>` : ''}
+    ${scrapeWarn}
   `;
   revealPanel('product');
 }
