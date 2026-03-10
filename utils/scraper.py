@@ -118,6 +118,16 @@ def scrape_listing_url(url: str) -> dict:
         session = requests.Session()
         session.headers.update(_HEADERS)
         resp = session.get(url, timeout=15, allow_redirects=True)
+        # Retry 403s with a different User-Agent (some sites block specific Chrome versions)
+        if resp.status_code == 403:
+            alt_headers = dict(_HEADERS)
+            alt_headers['User-Agent'] = (
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                'AppleWebKit/537.36 (KHTML, like Gecko) '
+                'Chrome/124.0.0.0 Safari/537.36'
+            )
+            session.headers.update(alt_headers)
+            resp = session.get(url, timeout=15, allow_redirects=True)
         if resp.status_code != 200:
             logger.warning(f"Scraper: HTTP {resp.status_code} for {url[:80]}")
             return {}

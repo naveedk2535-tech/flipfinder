@@ -1,7 +1,50 @@
 import logging
+import re
+from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
 from agents.base import run_with_search, parse_first_json
 
 logger = logging.getLogger(__name__)
+
+# UTM and tracking params to strip from URLs
+_TRACKING_PARAMS = {
+    'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+    's_kwcid', 'gclid', 'gad_source', 'gad_campaignid', 'fbclid', 'msclkid',
+    'dclid', 'twclid', 'ttclid', 'li_fat_id', 'mc_cid', 'mc_eid',
+    'ref', 'pla', 'srsltid',
+}
+
+
+def _clean_url(url: str) -> str:
+    """Strip tracking/UTM params from a URL to get a clean product link."""
+    try:
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query, keep_blank_values=False)
+        cleaned = {k: v for k, v in params.items() if k.lower() not in _TRACKING_PARAMS}
+        clean_query = urlencode(cleaned, doseq=True)
+        return urlunparse(parsed._replace(query=clean_query))
+    except Exception:
+        return url
+
+
+def _extract_product_hint_from_url(url: str) -> str:
+    """Extract a human-readable product hint from the URL path."""
+    try:
+        parsed = urlparse(url)
+        path = parsed.path.strip('/')
+        # Remove file extensions and IDs
+        path = re.sub(r'/\d+\.html$', '', path)
+        path = re.sub(r'\.\w{2,4}$', '', path)
+        # Remove common path prefixes
+        for prefix in ['products/', 'product/', 'itm/', 'item/', 'dp/', 'p/', 'shop/']:
+            if prefix in path:
+                path = path.split(prefix, 1)[-1]
+        # Convert slugs to readable text
+        hint = path.replace('-', ' ').replace('_', ' ').replace('/', ' ').strip()
+        if len(hint) > 5:
+            return hint
+    except Exception:
+        pass
+    return ''
 
 
 def _scrape_url_context(url: str) -> str:
@@ -44,12 +87,22 @@ def extract_product_details(text_input=None, image_base64=None, image_media_type
     try:
         prefix = ""
         if link:
+            # Clean tracking params from URL
+            clean_link = _clean_url(link)
+
             # First, scrape the actual page to get authoritative product data
-            scraped_context = _scrape_url_context(link)
+            scraped_context = _scrape_url_context(clean_link)
+
+            # Extract product hint from URL slug (useful when scraping fails)
+            url_hint = _extract_product_hint_from_url(clean_link)
+            hint_line = ''
+            if not scraped_context and url_hint:
+                hint_line = f'PRODUCT HINT FROM URL: "{url_hint}" — use this to identify the product.\n'
 
             prefix = (
                 f'{scraped_context}'
-                f'Also use web search to fetch and read this URL for additional context: {link}\n'
+                f'{hint_line}'
+                f'Also use web search to fetch and read this URL for additional context: {clean_link}\n'
                 f'IMPORTANT: Find and record the exact asking/sale price shown on that page as "listing_price" in your JSON output. If no price is found, set listing_price to 0.\n'
                 f'IMPORTANT: Detect the CURRENCY of the listing price. Set "listing_currency" to the ISO 4217 code (e.g. "USD", "GBP", "EUR", "PKR", "INR", "CAD", "AUD", "JPY"). Look for currency symbols ($/£/€/₹/¥/Rs), domain TLD (.pk=PKR, .co.uk=GBP, .de=EUR, .in=INR, .au=AUD, .ca=CAD, .jp=JPY), or explicit currency text on the page. If the site is clearly non-US, do NOT assume USD.\n'
                 f'CRITICAL: If scraped page data is provided above, the product title from that data is the GROUND TRUTH. Your brand, model, and product_type MUST match the listing title — do NOT substitute a different product.\n'
