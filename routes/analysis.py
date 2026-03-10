@@ -345,10 +345,16 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
             # Pass it through so the sourcing agent anchors cheapest_found to the real price.
             input_price = float(extracted.get('listing_price', 0) or 0) if has_link else 0
 
+            # Small delay between agents to avoid Gemini 15 RPM rate limit
+            import time as _time
+            _time.sleep(2)
+
             # Agent 2: Pricing first (sourcing needs avg_sold to compute target buy price)
             pricing = research_prices(search_query, extracted)
             analysis.price_research = json.dumps(pricing)
             db.session.commit()
+
+            _time.sleep(2)
 
             # Agent 3: Sourcing with real avg_sold data
             avg_sold = pricing.get('avg_sold', 0) or 0
@@ -449,6 +455,8 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
             analysis.sourcing_results = json.dumps(sourcing)
             db.session.commit()
             logger.info(f"Analysis {analysis_id}: {len(buy_links)} buy, {len(sell_links)} sell, {len(forum_links)} forum links saved")
+
+            _time.sleep(2)
 
             # Agent 4: Arbitrage
             arbitrage = calculate_arbitrage(pricing, sourcing, product_info=extracted)

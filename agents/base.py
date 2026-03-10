@@ -295,11 +295,17 @@ def run_with_search(prompt: str, image_base64: str = None,
             logger.warning(f"Image decode error: {e}")
     parts.append(types.Part.from_text(text=prompt))
 
+    import time as _time
     models = GEMINI_FAST_MODELS if fast else GEMINI_MODELS
     clients = _get_gemini_clients()
+    gemini_rate_limited = False  # If any key hits 429, skip all remaining Gemini attempts
 
     for model in models:
+        if gemini_rate_limited:
+            break  # Don't cascade — go straight to Groq
         for key_idx, client in enumerate(clients):
+            if gemini_rate_limited:
+                break
             key_label = f"key{key_idx + 1}"
             for attempt_search in ([True, False] if use_search else [False]):
                 try:
@@ -312,9 +318,10 @@ def run_with_search(prompt: str, image_base64: str = None,
                     err = str(e)
                     is_quota = "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower()
                     if is_quota:
-                        logger.warning(f"{model} {key_label} quota exceeded, trying next...")
+                        logger.warning(f"{model} {key_label} quota exceeded — skipping all Gemini, falling back to Groq")
                         _track('gemini', key_label, success=False, quota_hit=True)
-                        break  # try next key (or next model if no more keys)
+                        gemini_rate_limited = True
+                        break  # exit search loop, outer loops check flag
                     elif attempt_search:
                         logger.warning(f"{model} {key_label} search error, retrying without: {e}")
                         continue  # retry without search on same key
