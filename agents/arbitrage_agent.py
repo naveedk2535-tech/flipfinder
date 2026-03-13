@@ -140,6 +140,11 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
     # Get shipping estimate from AI (or use default)
     shipping = result.get('shipping_cost_est', 10.0) or 10.0
 
+    # Local-only platforms (0% fee) shouldn't win "best platform" — they have no
+    # buyer protection, no authentication, and aren't where serious resellers operate.
+    # Still included in breakdown for transparency, just excluded from "best" pick.
+    _LOCAL_ONLY = {'Facebook Marketplace', 'OfferUp'}
+
     best_net = float('-inf')
     best_plat = 'eBay'
     breakdown = []
@@ -157,7 +162,8 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
             'net_profit': net,
             'net_roi': roi
         })
-        if net > best_net:
+        # Only real resale platforms compete for "best platform"
+        if net > best_net and plat not in _LOCAL_ONLY:
             best_net = net
             best_plat = plat
 

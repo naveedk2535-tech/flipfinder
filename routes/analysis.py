@@ -141,9 +141,16 @@ def _generate_sell_links(query: str, product_type: str, sell_price: float) -> li
     platforms = [
         {'platform': 'eBay',             'url': f'https://www.ebay.com/sch/i.html?_nkw={q}'},
         {'platform': 'Mercari',          'url': f'https://www.mercari.com/search/?keyword={q}'},
-        {'platform': 'Facebook Marketplace', 'url': f'https://www.facebook.com/marketplace/search/?query={q}'},
-        {'platform': 'OfferUp',          'url': f'https://offerup.com/search?q={q}'},
     ]
+
+    # Facebook Marketplace & OfferUp — local pickup only, no authentication or buyer protection.
+    # Only relevant for electronics, furniture, collectibles, general items.
+    # Not relevant for sneakers (StockX/GOAT), luxury bags (consignment), watches (Chrono24).
+    is_sneaker = any(k in pt for k in ['sneaker', 'shoe', 'trainer', 'jordan', 'yeezy'])
+    is_luxury_bag = any(k in pt for k in ['bag', 'handbag', 'purse', 'wallet', 'tote'])
+    if not is_sneaker and not is_luxury_bag and not is_watch:
+        platforms.append({'platform': 'Facebook Marketplace', 'url': f'https://www.facebook.com/marketplace/search/?query={q}'})
+        platforms.append({'platform': 'OfferUp',          'url': f'https://offerup.com/search?q={q}'})
 
     # Electronics-specific platforms
     if is_electronics:
@@ -165,8 +172,7 @@ def _generate_sell_links(query: str, product_type: str, sell_price: float) -> li
         platforms.append({'platform': 'Grailed', 'url': f'https://www.grailed.com/shop?query={q}'})
 
     # Luxury bags — consignment platforms
-    is_bag = any(k in pt for k in ['bag', 'handbag', 'purse', 'wallet', 'tote'])
-    if is_bag:
+    if is_luxury_bag:
         platforms.append({'platform': 'Vestiaire Collective', 'url': f'https://www.vestiairecollective.com/search/?q={q}'})
         platforms.append({'platform': 'Fashionphile', 'url': f'https://www.fashionphile.com/shop?search={q}'})
         platforms.append({'platform': 'Rebag', 'url': f'https://www.rebag.com/shop/?q={q}'})
@@ -178,7 +184,7 @@ def _generate_sell_links(query: str, product_type: str, sell_price: float) -> li
 
     # Auction houses — watches, luxury bags, collectibles, furniture/antiques
     is_collectible = any(k in pt for k in ['card', 'toy', 'figure', 'collectible', 'lego', 'funko', 'vinyl', 'art', 'antique', 'coin', 'memorabilia'])
-    if is_watch or is_bag or is_collectible or is_furniture:
+    if is_watch or is_luxury_bag or is_collectible or is_furniture:
         platforms.append({'platform': "Sotheby's", 'url': f'https://www.sothebys.com/en/search?query={q}'})
         platforms.append({'platform': 'Heritage Auctions', 'url': f'https://www.ha.com/search?N=0&Nty=1&Ntt={q}'})
         platforms.append({'platform': "Christie's", 'url': f'https://www.christies.com/en/search?searchPhrase={q}'})
@@ -443,6 +449,22 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
             sourcing['buy_links'] = buy_links
             sourcing['sell_links'] = sell_links
 
+            # Update cheapest_found with real buy link data so arbitrage uses accurate price
+            if buy_links:
+                verified_prices = [l['total_price'] for l in buy_links
+                                   if l.get('total_price', 0) > 0 and l.get('verified')]
+                all_real_prices = [l['total_price'] for l in buy_links
+                                   if l.get('total_price', 0) > 0]
+                real_prices = verified_prices or all_real_prices
+                if real_prices:
+                    cheapest_real = min(real_prices)
+                    ai_cheapest = sourcing.get('cheapest_found', 0) or 0
+                    # Use real price if it's valid and lower than AI estimate (or AI had nothing)
+                    if cheapest_real > 0 and (ai_cheapest <= 0 or cheapest_real < ai_cheapest):
+                        sourcing['cheapest_found'] = cheapest_real
+                        sourcing['cheapest_found_source'] = 'verified_listing'
+                        logger.info(f"Analysis {analysis_id}: Updated cheapest_found from AI ${ai_cheapest:.0f} to real ${cheapest_real:.2f}")
+
             # Forum & blog links for deal-finding and community research
             forum_links = []
             try:
@@ -461,7 +483,7 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
             # Agent 4: Arbitrage
             arbitrage = calculate_arbitrage(pricing, sourcing, product_info=extracted)
             # Tag whether ROI is based on a real listing price or an AI estimate
-            has_real_price = (input_price > 0) or (sourcing.get('cheapest_found', 0) > 0)
+            has_real_price = (input_price > 0) or sourcing.get('cheapest_found_source') == 'verified_listing'
             arbitrage['roi_data_source'] = 'real' if has_real_price else 'estimated'
             analysis.arbitrage_result = json.dumps(arbitrage)
 
