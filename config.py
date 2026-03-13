@@ -8,6 +8,12 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-to-a-long-random-string-minimum-32-chars')
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///flipfinder.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # PythonAnywhere kills MySQL connections after 300s of inactivity.
+    # Recycle connections before that, and pre-ping to detect dead connections.
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_recycle': 280,
+        'pool_pre_ping': True,
+    }
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
     GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
     STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
