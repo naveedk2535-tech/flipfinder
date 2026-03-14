@@ -118,16 +118,28 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
     """Recalculate all arithmetic fields deterministically in Python.
     AI provides qualitative assessments; Python guarantees correct math."""
 
-    buy = result.get('buy_price', 0) or 0
-    sell = result.get('sell_price', 0) or 0
-
-    # Reconstruct from source data if AI returned bad values
-    if sell <= 0:
-        sell = pricing_data.get('recommended_sell_price', 0) or (pricing_data.get('avg_sold', 0) * 0.82)
-    if buy <= 0:
-        buy = sourcing_data.get('cheapest_found', 0) or sourcing_data.get('avg_source_price', 0)
+    # ALWAYS use sourcing/pricing data for buy/sell — AI numeric values are unreliable.
+    # The AI provides qualitative fields; Python owns the numbers.
+    sourcing_cheapest = sourcing_data.get('cheapest_found', 0) or 0
+    if sourcing_cheapest > 0:
+        buy = sourcing_cheapest
+    else:
+        buy = result.get('buy_price', 0) or 0
+        if buy <= 0:
+            buy = sourcing_data.get('avg_source_price', 0) or 0
         if buy <= 0:
             buy = (pricing_data.get('avg_sold', 0) or 0) * 0.55
+
+    pricing_sell = pricing_data.get('recommended_sell_price', 0) or 0
+    if pricing_sell > 0:
+        sell = pricing_sell
+    else:
+        sell = result.get('sell_price', 0) or 0
+        if sell <= 0:
+            sell = (pricing_data.get('avg_sold', 0) or 0) * 0.82
+
+    logger.info(f"Arbitrage math: buy=${buy:.2f} (source={'sourcing' if sourcing_cheapest > 0 else 'ai'}), "
+                f"sell=${sell:.2f} (source={'pricing' if pricing_sell > 0 else 'ai'})")
 
     result['buy_price'] = round(buy, 2)
     result['sell_price'] = round(sell, 2)

@@ -456,6 +456,8 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
                 all_real_prices = [l['total_price'] for l in buy_links
                                    if l.get('total_price', 0) > 0]
                 real_prices = verified_prices or all_real_prices
+                logger.info(f"Analysis {analysis_id}: buy_links={len(buy_links)}, "
+                            f"verified_prices={verified_prices}, all_real_prices={all_real_prices}")
                 if real_prices:
                     cheapest_real = min(real_prices)
                     ai_cheapest = sourcing.get('cheapest_found', 0) or 0
@@ -464,6 +466,9 @@ def _run_analysis_bg(app, analysis_id, user_id, image_base64, image_media_type,
                         sourcing['cheapest_found'] = cheapest_real
                         sourcing['cheapest_found_source'] = 'verified_listing'
                         logger.info(f"Analysis {analysis_id}: Updated cheapest_found from AI ${ai_cheapest:.0f} to real ${cheapest_real:.2f}")
+                    else:
+                        logger.info(f"Analysis {analysis_id}: Kept AI cheapest_found=${ai_cheapest:.0f} "
+                                    f"(real cheapest=${cheapest_real:.2f})")
 
             # Forum & blog links for deal-finding and community research
             forum_links = []
