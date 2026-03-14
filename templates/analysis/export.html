@@ -179,10 +179,10 @@
         <div class="stat-sub">after fees</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">True Profit</div>
-        {% set tnp = arb.get('true_net_profit', arb.get('net_profit',0) - arb.get('shipping_cost_est',10)) %}
+        <div class="stat-label">Net Profit</div>
+        {% set tnp = arb.get('net_profit', 0) %}
         <div class="stat-value {% if tnp > 0 %}green{% endif %}">${{ "%.2f"|format(tnp) }}</div>
-        <div class="stat-sub">after shipping (${{ "%.0f"|format(arb.get('shipping_cost_est',10)) }} est.)</div>
+        <div class="stat-sub">after platform fees</div>
       </div>
       <div class="stat-box">
         <div class="stat-label">Best Platform</div>

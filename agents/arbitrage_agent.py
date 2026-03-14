@@ -149,11 +149,7 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
     ebay_fee_pct = _get_ebay_fee(product_info)
     platforms = {k: (v if v is not None else ebay_fee_pct) for k, v in PLATFORM_FEES.items()}
 
-    # Get shipping estimate from AI (or use default)
-    shipping = result.get('shipping_cost_est', 10.0) or 10.0
-
-    # Local-only platforms (0% fee) shouldn't win "best platform" — they have no
-    # buyer protection, no authentication, and aren't where serious resellers operate.
+    # Local-only platforms shouldn't win "best platform" — no buyer protection.
     # Still included in breakdown for transparency, just excluded from "best" pick.
     _LOCAL_ONLY = {'Facebook Marketplace', 'OfferUp'}
 
@@ -165,7 +161,7 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
         if not _is_platform_eligible(plat, product_info):
             continue
         fee_amt = round(sell * fee_pct, 2)
-        net = round(sell - buy - fee_amt - shipping, 2)
+        net = round(sell - buy - fee_amt, 2)
         roi = round((net / buy) * 100, 2) if buy > 0 else 0
         breakdown.append({
             'platform': plat,
@@ -184,9 +180,10 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
     best_fee_pct = platforms.get(best_plat, 0.135) or 0.135
     result['platform_fee'] = round(sell * best_fee_pct, 2)
     result['net_profit'] = round(sell - buy - result['platform_fee'], 2)
-    result['true_net_profit'] = round(result['net_profit'] - shipping, 2)
+    # true_net_profit = net_profit (shipping excluded from calculation)
+    result['true_net_profit'] = result['net_profit']
 
-    # Storage cost
+    # Storage cost (informational only, not subtracted from profit)
     velocity = pricing_data.get('sell_velocity_days', 14) or 14
     storage = min(velocity * 0.50, 15.0)
     result['storage_cost_est'] = round(storage, 2)
@@ -194,12 +191,12 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
 
     # Break-even price
     if best_fee_pct < 1:
-        result['break_even_price'] = round((buy + shipping) / (1 - best_fee_pct), 2)
+        result['break_even_price'] = round(buy / (1 - best_fee_pct), 2)
     else:
         result['break_even_price'] = 0
 
-    # ROI
-    result['roi_percent'] = round((result['true_net_profit'] / buy) * 100, 2) if buy > 0 else 0
+    # ROI (based on profit after fees only, no shipping)
+    result['roi_percent'] = round((result['net_profit'] / buy) * 100, 2) if buy > 0 else 0
     result['capital_at_risk'] = round(buy, 2)
 
     # Risk-adjusted ROI
@@ -219,7 +216,7 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
 
     # Verdict (deterministic)
     roi = result['roi_percent']
-    tnp = result['true_net_profit']
+    tnp = result['net_profit']
     if roi > 80 and tnp > 0:
         result['verdict'] = 'Strong Flip'
     elif roi >= 35 and tnp > 0:
@@ -269,7 +266,7 @@ def _validate_and_recalculate(result, pricing_data, sourcing_data, product_info)
     # Time and hourly rate
     time_hrs = result.get('estimated_time_hrs', 2.0) or 2.0
     result['estimated_time_hrs'] = time_hrs
-    result['net_hourly_rate'] = round(result['true_net_profit'] / time_hrs, 2) if time_hrs > 0 else 0
+    result['net_hourly_rate'] = round(result['net_profit'] / time_hrs, 2) if time_hrs > 0 else 0
 
     # Ensure liquidity score
     if velocity <= 3:

@@ -140,17 +140,15 @@ expected_net = round(sell - buy - expected_fee, 2)
 check(f"net_profit math correct (${expected_net})", abs(result['net_profit'] - expected_net) < 0.02,
       f"expected ${expected_net}, got ${result['net_profit']}")
 
-shipping = result.get('shipping_cost_est', 14)
-expected_tnp = round(result['net_profit'] - shipping, 2)
-check(f"true_net_profit after shipping (${expected_tnp})", abs(result['true_net_profit'] - expected_tnp) < 0.02,
-      f"expected ${expected_tnp}, got ${result['true_net_profit']}")
+check("true_net_profit equals net_profit (no shipping in calc)", result['true_net_profit'] == result['net_profit'],
+      f"true_net={result['true_net_profit']}, net={result['net_profit']}")
 
 roi = result['roi_percent']
 check(f"ROI is positive ({roi:.0f}%)", roi > 0, f"got {roi}%")
 check("verdict is not Avoid", result['verdict'] != 'Avoid', f"got {result['verdict']}")
 
 print(f"\n  Summary: Buy ${buy} → Sell ${sell} on {result['best_platform']}")
-print(f"  Net profit: ${result['net_profit']} | After shipping: ${result['true_net_profit']} | ROI: {roi:.0f}%")
+print(f"  Net profit: ${result['net_profit']} | ROI: {roi:.0f}%")
 print(f"  Verdict: {result['verdict']}")
 
 

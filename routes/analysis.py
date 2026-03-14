@@ -558,8 +558,9 @@ def submit():
     has_image = image_file and image_file.filename
 
     # 24-hour cooldown: block re-analysis of the same text/link within 24 hours
+    # Admins bypass cooldown for testing
     raw_for_check = (link_input or text_input)[:4000] if (link_input or text_input) else None
-    if raw_for_check and not has_image:
+    if raw_for_check and not has_image and not current_user.is_admin:
         cutoff = datetime.utcnow() - timedelta(hours=24)
         recent_dupe = Analysis.query.filter(
             Analysis.user_id == current_user.id,
