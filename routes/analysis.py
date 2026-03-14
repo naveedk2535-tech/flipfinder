@@ -114,8 +114,8 @@ _PLATFORM_FEES = {
     "Sotheby's": 0.20,     # ~20% buyer's premium (seller pays less, but effective ~15-20%)
     'Heritage Auctions': 0.20,  # ~20% buyer's premium
     "Christie's": 0.20,    # ~20% buyer's premium
-    'Facebook Marketplace': 0.0,  # 0% for local pickup; 5% for shipped (we show 0% since local is common)
-    'OfferUp':   0.0,      # 0% for local; ~13% for shipped items
+    'Facebook Marketplace': 0.05,  # 5% for shipped items (0% local pickup, but most resellers ship)
+    'OfferUp':   0.129,    # 12.9% for shipped items (0% local pickup)
     'Chairish':  0.20,     # ~20% consignment (furniture/decor)
 }
 

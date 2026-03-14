@@ -32,8 +32,8 @@ PLATFORM_FEES = {
     "Sotheby's":   0.20,     # ~20% effective seller cost (auction houses)
     'Heritage Auctions': 0.20,  # ~20% effective seller cost
     "Christie's":  0.20,     # ~20% effective seller cost
-    'Facebook Marketplace': 0.0,  # 0% local pickup
-    'OfferUp':     0.0,      # 0% local pickup
+    'Facebook Marketplace': 0.05,  # 5% for shipped items (0% local pickup)
+    'OfferUp':     0.129,    # 12.9% for shipped items (0% local pickup)
     'Chairish':    0.20,     # ~20% consignment (furniture/decor)
 }
 
